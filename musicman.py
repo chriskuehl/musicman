@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Command-line interface to musicman
-import argparse, sys, os, os.path, errno, json, datetime, re
+import argparse, sys, os, os.path, errno, json, re, shutil, dateutil.parser
+from datetime import datetime
 
 FILENAME_CONFIG = "musicman.json"
 FILENAME_MUSIC = "music"
@@ -18,7 +19,9 @@ def get_library(path=None):
 	# walk up until we hit either the root directory, or find a library
 	while path != os.path.dirname(path):
 		if is_library(path):
-			return Library(path)
+			library = Library(path)
+			library.load()
+			return library
 
 		path = os.path.dirname(path)
 
@@ -43,19 +46,33 @@ def init():
 	print("New library initialized at {}".format(path))
 
 def status():
-	"""Prints information about the current musicman library."""
+	"""Prints information about the current library."""
+	library = get_library_or_die()
+
+	print("Library information:")
+	print("\tPath: {}".format(library.path))
+	print("\t# of Songs: {}".format(len(library.songs)))
+
+def add(path):
+	"""Adds the song at path to the current library."""
+	library = get_library_or_die()
+	library.add_song(path)
+	library.save()
+
+def get_library_or_die():
+	"""Returns the library at the current working directory, or prints an error
+	message and exits. Intended for usage on the CLI."""
+
 	library = get_library()
 
 	if not library:
 		print("Error: No musicman library exists above {}".format(os.getcwd()))
 		sys.exit(1)
 
-	print("Library information:")
-	print("\tPath: {}".format(library.path))
-	print("\t# of Songs: {}".format(len(library.music)))
+	return library
 
 class Library:
-	music = []
+	songs = []
 
 	def __init__(self, path):
 		self.path = path
@@ -85,12 +102,34 @@ class Library:
 		"""Returns a dictionary representing the library configuration which
 		can be serialized and persisted to disk."""
 
-		config = {"music": self.music}
+		config = {"songs": self._serialize_songs()}
 		return config
+
+	def _serialize_songs(self):
+		def serialize_song(song):
+			data = {
+				"filename": song["filename"],
+				"date_added": song["date_added"].isoformat()
+			}
+
+			return data
+
+		return [serialize_song(song) for song in self.songs]
+
+	def _unserialize_songs(self, songs):
+		def unserialize_song(song):
+			data = {
+				"filename": song["filename"],
+				"date_added": dateutil.parser.parse(song["date_added"])
+			}
+
+			return data
+
+		return [unserialize_song(song) for song in songs]
 
 	def load_config(self, config):
 		"""Loads a dictionary representing the library configuration."""
-		print("loading config: {}".format(config))
+		self.songs = self._unserialize_songs(config["songs"])
 	
 	# music management
 	def add_song(self, path, date_added=None, move=False):
@@ -101,7 +140,7 @@ class Library:
 			date_added = datetime.now()
 
 		filename = gen_filename(path)
-		dest_path = get_song_path(filename)
+		dest_path = self.get_song_path(filename)
 
 		try:
 			if move:
@@ -113,12 +152,11 @@ class Library:
 			sys.exit(1)
 
 		song = {
-				"filename": name,
+				"filename": filename,
 				"date_added": date_added
 		}
 
-		songs.append(song)
-		print(songs)
+		self.songs.append(song)
 
 	# file and directory paths
 	def get_config_path(self):
