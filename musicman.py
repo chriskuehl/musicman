@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Command-line interface to musicman
-import argparse, sys, os, os.path, errno, json, re, shutil, dateutil.parser
+import argparse, sys, os, os.path, errno, json, re, shutil, dateutil.parser, tempfile
 from datetime import datetime
 
 FILENAME_CONFIG = "musicman.json"
@@ -108,9 +108,17 @@ class Library:
 			self.load_config(json.load(file))
 
 	def save(self):
-		"""Saves the library configuration to disk."""
-		with open(self.get_config_path(), "w") as file:
+		"""Saves the library configuration to disk.
+		
+		First saves to a temporary file and then moves to the proper location
+		to avoid destroying the library if an exception occurs while dumping
+		the config."""
+		handle, path = tempfile.mkstemp()
+
+		with open(handle, "w") as file:
 			json.dump(self.get_config(), file, indent=4)
+
+		shutil.move(path, self.get_config_path())
 
 	def get_config(self):
 		"""Returns a dictionary representing the library configuration which
