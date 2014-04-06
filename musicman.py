@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 # Command-line interface to musicman
-import argparse, sys, os, os.path, errno, json
+import argparse, sys, os, os.path, errno, json, datetime, hashlib
 
 FILENAME_CONFIG = "musicman.json"
 FILENAME_MUSIC = "music"
 
-def get_library(path=os.getcwd()):
+def get_library(path=None):
 	"""Returns a Library object representing the library the path exists under,
 	or None if not under a library."""
+
+	if not path:
+		path = os.getcwd()
 
 	# walk up until we hit either the root directory, or find a library
 	while path != os.path.dirname(path):
@@ -85,6 +88,24 @@ class Library:
 	def load_config(self, config):
 		"""Loads a dictionary representing the library configuration."""
 		print("loading config: {}".format(config))
+	
+	# music management
+	def add_song(self, path, add_date=None, move=False):
+		"""Adds the given path to the library, copying (or moving, if
+		move=True) the music file to the appropriate directory."""
+
+		if not add_date:
+			add_date = datetime.now()
+
+		id = generate_id(path)
+
+		try:
+			if move:
+				shutil.move(path, dest_path)
+			else:
+				shutil.copyfile(path, dest_path)
+		except IOError as error:
+			print("Failed to {} file from `{}` to `{}`".format("move" if move else "copy", path, dest_path))
 
 	# file and directory paths
 	def get_config_path(self):
@@ -92,6 +113,26 @@ class Library:
 
 	def get_music_path(self):
 		return os.path.join(self.path, FILENAME_MUSIC)
+
+	def get_song_path(self, song):
+		return os.path.join(self.get_music_path(), id)
+
+def get_id(path):
+	"""Generates an ID for a given song. The ID should be unique but
+	deterministic (the same song always gets the same ID).
+
+	This implementation simply hashes the file, so it's obviously quite slow.
+	Possible improvements might be hashing file metadata, although there are
+	other concerns here as well.
+	"""
+
+	md5 = hashlib.md5()
+
+	with open(path, "rb") as file:
+		for chunk in iter(lambda: file.read(8192), b""):
+			md5.update(chunk)
+	
+	return md5.hexdigest()
 
 if __name__ == "__main__":
 	commands = ["init", "status"]
