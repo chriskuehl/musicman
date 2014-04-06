@@ -7,7 +7,7 @@ FILENAME_CONFIG = "musicman.json"
 FILENAME_MUSIC = "music"
 
 HELP_DESCRIPTION = "Manage musicman libraries"
-HELP_EPILOG = "Try --help command to see required arguments."
+HELP_EPILOG = "Try command --help to see required arguments."
 
 def get_library(path=None):
 	"""Returns a Library object representing the library the path exists under,
@@ -53,9 +53,20 @@ def status():
 	print("\tPath: {}".format(library.path))
 	print("\t# of Songs: {}".format(len(library.songs)))
 
-def add(path, date_added):
+def add(path, date_added, check_extension=True):
 	"""Adds the song at path to the current library."""
 	library = get_library_or_die()
+
+	# sanity check on file extension
+	ext = os.path.splitext(path)[1][1:]
+
+	if check_extension and ext not in library.extensions:
+		print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
+
+		if input("Add song anyway? [yN] ") != "y":
+			print("Skipping song.")
+			return
+
 	library.add_song(path, date_added=date_added)
 	library.save()
 
@@ -74,12 +85,15 @@ def get_library_or_die():
 class Library:
 	songs = []
 
+	# default list of permitted music extensions (can be adjusted per-library)
+	extensions = ["mp3", "mp4", "wav", "m4a", "flac"]
+
 	def __init__(self, path):
 		self.path = path
 
 	def init(self):
 		"""Sets up a new library for the first time, creating necessary
-		configuration files."""
+		configuration files and adding base config."""
 
 		try:
 			os.makedirs(self.get_music_path())
@@ -102,7 +116,11 @@ class Library:
 		"""Returns a dictionary representing the library configuration which
 		can be serialized and persisted to disk."""
 
-		config = {"songs": self._serialize_songs()}
+		config = {
+			"extensions": self.extensions,
+			"songs": self._serialize_songs()
+		}
+
 		return config
 
 	def _serialize_songs(self):
@@ -129,6 +147,7 @@ class Library:
 
 	def load_config(self, config):
 		"""Loads a dictionary representing the library configuration."""
+		self.extensions = config["extensions"]
 		self.songs = self._unserialize_songs(config["songs"])
 	
 	# music management
@@ -152,8 +171,8 @@ class Library:
 			sys.exit(1)
 
 		song = {
-				"filename": filename,
-				"date_added": date_added
+			"filename": filename,
+			"date_added": date_added
 		}
 
 		self.songs.append(song)
@@ -194,7 +213,10 @@ if __name__ == "__main__":
 
 	parser_add = subparsers.add_parser("add", help="add music file to library")
 	parser_add.add_argument("path", type=str, help="path to file to add")
-	parser_add.add_argument("--date", type=str, default=datetime.now().isoformat(), help="when the song was added (iso8601 format)")
+	parser_add.add_argument("--date", type=str, default=datetime.now().isoformat(),
+		help="when the song was added (iso8601 format)")
+	parser_add.add_argument("--skip-check-extension", default=False, action="store_true",
+		help="skip checking file extension against preferred extension types")
 
 	args = parser.parse_args()
 
@@ -203,4 +225,5 @@ if __name__ == "__main__":
 	elif args.command == "status":
 		status()
 	elif args.command == "add":
-		add(args.path, dateutil.parser.parse(args.date))
+		add(args.path, dateutil.parser.parse(args.date),
+			check_extension=not args.skip_check_extension)
