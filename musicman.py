@@ -53,10 +53,10 @@ def status():
 	print("\tPath: {}".format(library.path))
 	print("\t# of Songs: {}".format(len(library.songs)))
 
-def add(path):
+def add(path, date_added):
 	"""Adds the song at path to the current library."""
 	library = get_library_or_die()
-	library.add_song(path)
+	library.add_song(path, date_added=date_added)
 	library.save()
 
 def get_library_or_die():
@@ -194,6 +194,7 @@ if __name__ == "__main__":
 
 	parser_add = subparsers.add_parser("add", help="add music file to library")
 	parser_add.add_argument("path", type=str, help="path to file to add")
+	parser_add.add_argument("--date", type=str, default=datetime.now().isoformat(), help="when the song was added (iso8601 format)")
 
 	args = parser.parse_args()
 
@@ -202,4 +203,4 @@ if __name__ == "__main__":
 	elif args.command == "status":
 		status()
 	elif args.command == "add":
-		add(args.path)
+		add(args.path, dateutil.parser.parse(args.date))
