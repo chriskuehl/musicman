@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # Command-line interface to musicman
-import argparse, sys, os, os.path, errno, json, datetime, hashlib
+import argparse, sys, os, os.path, errno, json, datetime, re
 
 FILENAME_CONFIG = "musicman.json"
 FILENAME_MUSIC = "music"
+
+HELP_DESCRIPTION = "Manage musicman libraries"
+HELP_EPILOG = "Try --help command to see required arguments."
 
 def get_library(path=None):
 	"""Returns a Library object representing the library the path exists under,
@@ -90,14 +93,15 @@ class Library:
 		print("loading config: {}".format(config))
 	
 	# music management
-	def add_song(self, path, add_date=None, move=False):
+	def add_song(self, path, date_added=None, move=False):
 		"""Adds the given path to the library, copying (or moving, if
 		move=True) the music file to the appropriate directory."""
 
-		if not add_date:
-			add_date = datetime.now()
+		if not date_added:
+			date_added = datetime.now()
 
-		id = generate_id(path)
+		filename = gen_filename(path)
+		dest_path = get_song_path(filename)
 
 		try:
 			if move:
@@ -106,6 +110,15 @@ class Library:
 				shutil.copyfile(path, dest_path)
 		except IOError as error:
 			print("Failed to {} file from `{}` to `{}`".format("move" if move else "copy", path, dest_path))
+			sys.exit(1)
+
+		song = {
+				"filename": name,
+				"date_added": date_added
+		}
+
+		songs.append(song)
+		print(songs)
 
 	# file and directory paths
 	def get_config_path(self):
@@ -115,30 +128,34 @@ class Library:
 		return os.path.join(self.path, FILENAME_MUSIC)
 
 	def get_song_path(self, song):
-		return os.path.join(self.get_music_path(), id)
+		return os.path.join(self.get_music_path(), song)
 
-def get_id(path):
-	"""Generates an ID for a given song. The ID should be unique but
-	deterministic (the same song always gets the same ID).
-
-	This implementation simply hashes the file, so it's obviously quite slow.
-	Possible improvements might be hashing file metadata, although there are
-	other concerns here as well.
+def gen_filename(path):
+	"""Generates a file name a given song. Tries to be fairly conservative in
+	what characters are allowed, but still readable.
+	
+	>>> gen_filename("~/Music/Televisor/01. Old Skool (Nitro Fun Remix).flac")
+	'01-Old-Skool-Nitro-Fun-Remix.flac'
 	"""
 
-	md5 = hashlib.md5()
+	basename = os.path.basename(path)
+	parts = os.path.splitext(basename)
 
-	with open(path, "rb") as file:
-		for chunk in iter(lambda: file.read(8192), b""):
-			md5.update(chunk)
-	
-	return md5.hexdigest()
+	name = parts[0]
+	name = name.replace(" ", "-")
+	name = "".join([c for c in name if re.match(r'[a-zA-Z0-9\-_]', c)])
+
+	return  name + parts[1]
 
 if __name__ == "__main__":
-	commands = ["init", "status"]
+	parser = argparse.ArgumentParser(description=HELP_DESCRIPTION, epilog=HELP_EPILOG)
+	subparsers = parser.add_subparsers(title="available commands", dest="command")
 
-	parser = argparse.ArgumentParser(description="Manage musicman libraries.")
-	parser.add_argument("command", type=str, choices=commands)
+	parser_init = subparsers.add_parser("init", help="initialize new library")
+	parser_status = subparsers.add_parser("status", help="print status about library")
+
+	parser_add = subparsers.add_parser("add", help="add music file to library")
+	parser_add.add_argument("path", type=str, help="path to file to add")
 
 	args = parser.parse_args()
 
@@ -146,3 +163,5 @@ if __name__ == "__main__":
 		init()
 	elif args.command == "status":
 		status()
+	elif args.command == "add":
+		add(args.path)
