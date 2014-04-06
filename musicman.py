@@ -53,21 +53,24 @@ def status():
 	print("\tPath: {}".format(library.path))
 	print("\t# of Songs: {}".format(len(library.songs)))
 
-def add(path, date_added, check_extension=True):
+def add(paths, date_added, check_extension=True):
 	"""Adds the song at path to the current library."""
 	library = get_library_or_die()
 
-	# sanity check on file extension
-	ext = os.path.splitext(path)[1][1:]
+	for path in paths:
+		# sanity check on file extension
+		ext = os.path.splitext(path)[1][1:]
 
-	if check_extension and ext not in library.extensions:
-		print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
+		if check_extension and ext not in library.extensions:
+			print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
 
-		if input("Add song anyway? [yN] ") != "y":
-			print("Skipping song.")
-			return
+			if input("Add song anyway? [yN] ") != "y":
+				print("Skipping song.")
+				continue
 
-	library.add_song(path, date_added=date_added)
+		library.add_song(path, date_added=date_added)
+		print("Added song `{}`".format(path))
+
 	library.save()
 
 def get_library_or_die():
@@ -220,7 +223,7 @@ if __name__ == "__main__":
 	parser_status = subparsers.add_parser("status", help="print status about library")
 
 	parser_add = subparsers.add_parser("add", help="add music file to library")
-	parser_add.add_argument("path", type=str, help="path to file to add")
+	parser_add.add_argument("path", type=str, nargs="+", help="path to file(s) to add")
 	parser_add.add_argument("--date", type=str, default=datetime.now().isoformat(),
 		help="when the song was added (iso8601 format)")
 	parser_add.add_argument("--skip-check-extension", default=False, action="store_true",
