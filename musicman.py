@@ -9,6 +9,9 @@ FILENAME_MUSIC = "music"
 HELP_DESCRIPTION = "Manage musicman libraries"
 HELP_EPILOG = "Try command --help to see required arguments."
 
+# files which should never be added to libraries (lowercase)
+FILE_BLACKLIST = (".ds_store", "thumbs.db", "itunes library.itl", "itunes music library.xml")
+
 def get_library(path=None):
 	"""Returns a Library object representing the library the path exists under,
 	or None if not under a library."""
@@ -60,9 +63,23 @@ def add(paths, date_added, check_extension=True, recurse=False):
 	library.save()
 
 def add_files(library, paths, date_added, check_extension=True, recurse=True):
+	"""Adds a list of paths to the given library, optionally recursing into
+	directories."""
+
 	for path in paths:
+		basename = os.path.basename(path)
+
+		# skip garbage files
+		if basename.lower() in FILE_BLACKLIST:
+			print("Skipping file in blacklist: `{}`.".format(path))
+			continue
+
+		if basename.startswith("."):
+			print("Skipping hidden file/directory: `{}`.".format(path))
+			continue
+		
+		# add files, recurse into directories
 		if os.path.isfile(path):
-			# sanity check on file extension
 			ext = os.path.splitext(path)[1][1:]
 
 			if check_extension and ext not in library.extensions:
