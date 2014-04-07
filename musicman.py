@@ -53,25 +53,41 @@ def status():
 	print("\tPath: {}".format(library.path))
 	print("\t# of Songs: {}".format(len(library.songs)))
 
-def add(paths, date_added, check_extension=True):
+def add(paths, date_added, check_extension=True, recurse=False):
 	"""Adds the song at path to the current library."""
 	library = get_library_or_die()
-
-	for path in paths:
-		# sanity check on file extension
-		ext = os.path.splitext(path)[1][1:]
-
-		if check_extension and ext not in library.extensions:
-			print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
-
-			if input("Add song anyway? [yN] ") != "y":
-				print("Skipping song.")
-				continue
-
-		library.add_song(path, date_added=date_added)
-		print("Added song `{}`".format(path))
-
+	add_files(library, paths, date_added, check_extension=check_extension, recurse=recurse)
 	library.save()
+
+def add_files(library, paths, date_added, check_extension=True, recurse=True):
+	for path in paths:
+		if os.path.isfile(path):
+			# sanity check on file extension
+			ext = os.path.splitext(path)[1][1:]
+
+			if check_extension and ext not in library.extensions:
+				print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
+
+				if input("Add song anyway? [yN] ") != "y":
+					print("Skipping song.")
+					continue
+
+			library.add_song(path, date_added=date_added)
+			print("Added song `{}`".format(path))
+		elif os.path.isdir(path):
+			if not recurse:
+				print("Encountered directory `{}`.".format(path))
+
+				if input("Recurse into directory? [yN] ") != "y":
+					print("Skipping directory.")
+					continue
+
+			print("Recursing into directory: {}".format(path))
+			new_paths = [os.path.join(path, p) for p in os.listdir(path)]
+			add_files(library, new_paths, date_added, check_extension=check_extension, recurse=recurse)
+		else:
+			print("Song doesn't exist: `{}`".format(path))
+			print("Skipping song.")
 
 def get_library_or_die():
 	"""Returns the library at the current working directory, or prints an error
@@ -222,8 +238,12 @@ if __name__ == "__main__":
 	parser_init = subparsers.add_parser("init", help="initialize new library")
 	parser_status = subparsers.add_parser("status", help="print status about library")
 
+	# add parser
 	parser_add = subparsers.add_parser("add", help="add music file to library")
 	parser_add.add_argument("path", type=str, nargs="+", help="path to file(s) to add")
+
+	parser_add.add_argument("-r", default=False, action="store_true", dest="recurse",
+		help="recurse into directories without prompting when finding files")
 	parser_add.add_argument("--date", type=str, default=datetime.now().isoformat(),
 		help="when the song was added (iso8601 format)")
 	parser_add.add_argument("--skip-check-extension", default=False, action="store_true",
@@ -237,4 +257,5 @@ if __name__ == "__main__":
 		status()
 	elif args.command == "add":
 		add(args.path, dateutil.parser.parse(args.date),
-			check_extension=not args.skip_check_extension)
+			check_extension=not args.skip_check_extension,
+			recurse=args.recurse)
