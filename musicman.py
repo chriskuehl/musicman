@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Command-line interface to musicman
 import argparse, sys, os, os.path, errno, json, re, shutil, dateutil.parser, tempfile
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
 FILENAME_CONFIG = "musicman.json"
@@ -55,6 +56,10 @@ def status():
 	print("Library information:")
 	print("\tPath: {}".format(library.path))
 	print("\t# of Songs: {}".format(len(library.songs)))
+	print("\tExports Configured ({}):".format(len(library.exports)))
+
+	for name, export in library.exports.items():
+		print("\t\t{}: {}".format(name, export))
 
 def add(paths, date_added, check_extension=True, recurse=False):
 	"""Adds the song at path to the current library."""
@@ -106,6 +111,24 @@ def add_files(library, paths, date_added, check_extension=True, recurse=True):
 			print("Song doesn't exist: `{}`".format(path))
 			print("Skipping song.")
 
+def export():
+	"""Updates all exports for the given library."""
+	library = get_library_or_die()
+
+	if len(library.exports) <= 0:
+		print("You haven't configured any exports.")
+		sys.exit(1)
+
+	for name, export in library.exports.items():
+		print("Updating export `{}`..".format(name))
+		export.update()
+{}
+def dump():
+	"""Prints the serialized version of the library. Only useful for
+	debugging."""
+	library = get_library_or_die()
+	print(json.dumps(library.get_config(), indent=4))
+
 def get_library_or_die():
 	"""Returns the library at the current working directory, or prints an error
 	message and exits. Intended for usage on the CLI."""
@@ -117,6 +140,47 @@ def get_library_or_die():
 		sys.exit(1)
 
 	return library
+
+class Export(metaclass=ABCMeta):
+	"""Export represents a single export configuration."""
+	TYPE = "unconfigured"
+
+	@abstractmethod
+	def update(self):
+		"""Updates the export."""
+		pass
+
+	def serialize(self):
+		"""Returns a dictionary representing a serialized version of this
+		export configuration."""
+		return {"type": self.TYPE}
+
+	def unserialize(self, config):
+		"""Updates this (unconfigured) export to match the serialized config
+		represented by the dictionary given."""
+		pass
+
+class BansheeExport(Export):
+	TYPE = "banshee"
+	music_dir = None
+	config_dir = None
+
+	def update(self):
+		print("updating banshee...")
+
+	def serialize(self):
+		config = super().serialize()
+		config["music_dir"] = self.music_dir
+		config["config_dir"] = self.config_dir
+		return config
+
+	def unserialize(self, config):
+		super().unserialize(config)
+		self.music_dir = config["music_dir"]
+		self.config_dir = config["config_dir"]
+
+EXPORT_CLASSES = (BansheeExport,)
+EXPORT_MAPPING = {export.TYPE: export for export in EXPORT_CLASSES}
 
 class Library:
 	songs = []
@@ -162,10 +226,23 @@ class Library:
 
 		config = {
 			"extensions": self.extensions,
+			"exports": self._serialize_exports(),
 			"songs": self._serialize_songs()
 		}
 
 		return config
+
+	# serialization
+	def _serialize_exports(self):
+		return {export: self.exports[export].serialize() for export in self.exports}
+
+	def _unserialize_exports(self, exports):
+		def unserialize_export(config):
+			export = EXPORT_MAPPING[config["type"]]()
+			export.unserialize(config)
+			return export
+
+		return {export: unserialize_export(exports[export]) for export in exports}
 
 	def _serialize_songs(self):
 		def serialize_song(song):
@@ -192,6 +269,7 @@ class Library:
 	def load_config(self, config):
 		"""Loads a dictionary representing the library configuration."""
 		self.extensions = config["extensions"]
+		self.exports = self._unserialize_exports(config["exports"])
 		self.songs = self._unserialize_songs(config["songs"])
 	
 	# music management
@@ -255,16 +333,17 @@ if __name__ == "__main__":
 	parser_init = subparsers.add_parser("init", help="initialize new library")
 	parser_status = subparsers.add_parser("status", help="print status about library")
 
-	# add parser
 	parser_add = subparsers.add_parser("add", help="add music file to library")
 	parser_add.add_argument("path", type=str, nargs="+", help="path to file(s) to add")
-
 	parser_add.add_argument("-r", default=False, action="store_true", dest="recurse",
 		help="recurse into directories without prompting when finding files")
 	parser_add.add_argument("--date", type=str, default=datetime.now().isoformat(),
 		help="when the song was added (iso8601 format)")
 	parser_add.add_argument("--skip-check-extension", default=False, action="store_true",
 		help="skip checking file extension against preferred extension types")
+
+	parser_export = subparsers.add_parser("export", help="export library into another format")
+	parser_dump = subparsers.add_parser("dump", help="dumps library JSON (for debugging serialization)")
 
 	args = parser.parse_args()
 
@@ -276,3 +355,7 @@ if __name__ == "__main__":
 		add(args.path, dateutil.parser.parse(args.date),
 			check_extension=not args.skip_check_extension,
 			recurse=args.recurse)
+	elif args.command == "export":
+		export()
+	elif args.command == "dump":
+		dump()
