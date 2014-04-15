@@ -99,7 +99,7 @@ def export():
 
 	for name, export in library.exports.items():
 		print("Updating export `{}`..".format(name))
-		export.update()
+		export.update(library)
 
 def dump():
 	"""Prints the serialized version of the library. Only useful for
