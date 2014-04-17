@@ -8,6 +8,7 @@ import os
 import os.path
 import sys
 
+import musicman.io as mio
 import musicman.library as mlib
 
 HELP_DESCRIPTION = "Manage musicman libraries"
@@ -106,7 +107,12 @@ def update_metadata():
 	library = get_library_or_die()
 
 	for song in library.songs:
-		song.update_metadata(library.get_song_path(song.filename))
+		path = library.get_song_path(song.filename)
+
+		try:
+			song.update_metadata(path)
+		except mio.UnableToReadTagsException:
+			print("Warning: Unable to read tags from `{}`".format(path))
 
 	library.save()
 

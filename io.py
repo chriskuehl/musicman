@@ -69,7 +69,11 @@ def get_tags(song_path):
 	tag_path = os.path.dirname(os.path.realpath(__file__))
 	tag_path = os.path.join(tag_path, "lib", "tag.py")
 	
-	output = subprocess.check_output([tag_path, song_path]).decode("utf-8")
+	try:
+		output = subprocess.check_output([tag_path, song_path], stderr=open(os.devnull)).decode("utf-8")
+	except subprocess.CalledProcessError:
+		raise UnableToReadTagsException()
+
 	attrs = json.loads(output)
 
 	tags = {}
@@ -91,3 +95,6 @@ def get_tags(song_path):
 				break
 
 	return tags
+
+class UnableToReadTagsException(Exception):
+	pass

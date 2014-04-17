@@ -129,7 +129,11 @@ class Library:
 			sys.exit(1)
 
 		song = Song(filename, date_added, {})
-		song.update_metadata(dest_path)
+
+		try:
+			song.update_metadata(dest_path)
+		except mio.UnableToReadTagsException:
+			print("Warning: Unable to read tags from `{}` (song still added to library)".format(path))
 
 		self.songs.append(song)
 		return song
