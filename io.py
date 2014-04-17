@@ -84,7 +84,8 @@ def get_tags(song_path):
 		"tracknumber": ("tracknumber",),
 		"date": ("date",),
 		"genre": ("genre", "style"),
-		"composer": ("composer")
+		"composer": ("composer"),
+		"length": ("length", "duration")
 	}
 
 	for key, names in tag_names.items():

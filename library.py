@@ -9,6 +9,7 @@ import shutil
 import tempfile
 
 import musicman.exports as mexports
+import musicman.playlists as mplaylists
 import musicman.io as mio
 
 FILENAME_CONFIG = "musicman.json"
@@ -64,6 +65,7 @@ class Library:
 		config = {
 			"extensions": self.extensions,
 			"exports": self._serialize_exports(),
+			"playlists": self._serialize_playlists(),
 			"songs": self._serialize_songs()
 		}
 
@@ -102,10 +104,22 @@ class Library:
 
 		return [unserialize_song(song) for song in songs]
 
+	def _serialize_playlists(self):
+		return {plist: self.playlists[plist].serialize() for plist in self.playlists}
+
+	def _unserialize_playlists(self, plists):
+		def unserialize_playlist(config):
+			plist = mplaylists.PLAYLIST_MAPPING[config["type"]]()
+			plist.unserialize(config, self)
+			return plist
+
+		return {plist: unserialize_playlist(plists[plist]) for plist in plists}
+
 	def load_config(self, config):
 		"""Loads a dictionary representing the library configuration."""
 		self.extensions = config["extensions"]
 		self.exports = self._unserialize_exports(config["exports"])
+		self.playlists = self._unserialize_playlists(config["playlists"])
 		self.songs = self._unserialize_songs(config["songs"])
 
 	# music management
@@ -137,6 +151,10 @@ class Library:
 
 		self.songs.append(song)
 		return song
+	
+	def get_song(self, filename):
+		# TODO: represent songs as a dictionary of filename -> song object?
+		return next((song for song in self.songs if song.filename == filename), None)
 
 	# file and directory paths
 	def get_config_path(self):
