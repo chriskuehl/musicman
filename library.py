@@ -83,8 +83,8 @@ class Library:
 	def _serialize_songs(self):
 		def serialize_song(song):
 			data = {
-				"filename": song["filename"],
-				"date_added": song["date_added"].isoformat()
+				"filename": song.filename,
+				"date_added": song.date_added.isoformat()
 			}
 
 			return data
@@ -93,12 +93,9 @@ class Library:
 
 	def _unserialize_songs(self, songs):
 		def unserialize_song(song):
-			data = {
-				"filename": song["filename"],
-				"date_added": dateutil.parser.parse(song["date_added"])
-			}
-
-			return data
+			filename = song["filename"]
+			date_added = dateutil.parser.parse(song["date_added"])
+			return Song(filename, date_added)
 
 		return [unserialize_song(song) for song in songs]
 
@@ -107,7 +104,7 @@ class Library:
 		self.extensions = config["extensions"]
 		self.exports = self._unserialize_exports(config["exports"])
 		self.songs = self._unserialize_songs(config["songs"])
-	
+
 	# music management
 	def add_song(self, path, date_added=None, move=False):
 		"""Adds the given path to the library, copying (or moving, if
@@ -128,12 +125,9 @@ class Library:
 			print("Failed to {} file from `{}` to `{}`".format("move" if move else "copy", path, dest_path))
 			sys.exit(1)
 
-		song = {
-			"filename": filename,
-			"date_added": date_added
-		}
-
+		song = Song(filename, date_added)
 		self.songs.append(song)
+		return song
 
 	# file and directory paths
 	def get_config_path(self):
@@ -144,6 +138,11 @@ class Library:
 
 	def get_song_path(self, song):
 		return os.path.join(self.get_music_path(), song)
+
+class Song:
+	def __init__(self, filename, date_added):
+		self.filename = filename
+		self.date_added = date_added
 
 def gen_filename(path):
 	"""Generates a file name a given song. Tries to be fairly conservative in
