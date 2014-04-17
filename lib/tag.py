@@ -20,4 +20,4 @@ if __name__ == "__main__":
 	if not f:
 		sys.exit("unable to read file")
 
-	print json.dumps(dict((k, v) for (k, v) in f.iteritems()), indent=4)
+	print json.dumps(dict((k, v[0]) for (k, v) in f.iteritems()), indent=4)

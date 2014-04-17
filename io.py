@@ -74,9 +74,13 @@ def get_tags(song_path):
 
 	tags = {}
 	tag_names = {
-		"artist": ("artist", "performer", "composer"),
+		"artist": ("artist", "performer", "albumartist", "composer"),
 		"title": ("title", "track", "name"),
-		"album": ("album",)
+		"album": ("album",),
+		"tracknumber": ("tracknumber",),
+		"date": ("date",),
+		"genre": ("genre", "style"),
+		"composer": ("composer")
 	}
 
 	for key, names in tag_names.items():

@@ -85,7 +85,8 @@ class Library:
 		def serialize_song(song):
 			data = {
 				"filename": song.filename,
-				"date_added": song.date_added.isoformat()
+				"date_added": song.date_added.isoformat(),
+				"metadata": song.metadata
 			}
 
 			return data
@@ -96,7 +97,8 @@ class Library:
 		def unserialize_song(song):
 			filename = song["filename"]
 			date_added = dateutil.parser.parse(song["date_added"])
-			return Song(filename, date_added)
+			metadata = song["metadata"] if "metadata" in song else {}
+			return Song(filename, date_added, metadata)
 
 		return [unserialize_song(song) for song in songs]
 
@@ -126,7 +128,9 @@ class Library:
 			print("Failed to {} file from `{}` to `{}`".format("move" if move else "copy", path, dest_path))
 			sys.exit(1)
 
-		song = Song(filename, date_added)
+		song = Song(filename, date_added, {})
+		song.update_metadata(dest_path)
+
 		self.songs.append(song)
 		return song
 
@@ -141,12 +145,13 @@ class Library:
 		return os.path.join(self.get_music_path(), filename)
 
 class Song:
-	def __init__(self, filename, date_added):
+	def __init__(self, filename, date_added, metadata):
 		self.filename = filename
 		self.date_added = date_added
+		self.metadata = metadata
 
 	def update_metadata(self, path):
-		print(mio.get_tags(path))
+		self.metadata = mio.get_tags(path)
 
 def gen_filename(path):
 	"""Generates a file name a given song. Tries to be fairly conservative in
