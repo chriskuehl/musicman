@@ -9,6 +9,7 @@ import shutil
 import tempfile
 
 import musicman.exports as mexports
+import musicman.io as mio
 
 FILENAME_CONFIG = "musicman.json"
 FILENAME_MUSIC = "music"
@@ -136,13 +137,16 @@ class Library:
 	def get_music_path(self):
 		return os.path.join(self.path, FILENAME_MUSIC)
 
-	def get_song_path(self, song):
-		return os.path.join(self.get_music_path(), song)
+	def get_song_path(self, filename):
+		return os.path.join(self.get_music_path(), filename)
 
 class Song:
 	def __init__(self, filename, date_added):
 		self.filename = filename
 		self.date_added = date_added
+
+	def update_metadata(self, path):
+		print(mio.get_tags(path))
 
 def gen_filename(path):
 	"""Generates a file name a given song. Tries to be fairly conservative in

@@ -101,6 +101,13 @@ def export():
 		print("Updating export `{}`..".format(name))
 		export.update(library)
 
+def refresh_metadata():
+	"""Refreshes metadata for all songs in the library."""
+	library = get_library_or_die()
+
+	for song in library.songs:
+		song.update_metadata(library.get_song_path(song.filename))
+
 def dump():
 	"""Prints the serialized version of the library. Only useful for
 	debugging."""
@@ -136,6 +143,7 @@ if __name__ == "__main__":
 		help="skip checking file extension against preferred extension types")
 
 	parser_export = subparsers.add_parser("export", help="export library into another format")
+	parser_refresh_metadata = subparsers.add_parser("refresh-metadata", help="refreshes media metadata")
 	parser_dump = subparsers.add_parser("dump", help="dumps library JSON (for debugging serialization)")
 
 	args = parser.parse_args()
@@ -150,5 +158,7 @@ if __name__ == "__main__":
 			recurse=args.recurse)
 	elif args.command == "export":
 		export()
+	elif args.command == "refresh-metadata":
+		refresh_metadata()
 	elif args.command == "dump":
 		dump()

@@ -1,6 +1,8 @@
+import json
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 
 def ensure_dir(path):
@@ -55,3 +57,33 @@ def ensure_empty_dir(path, allow_delete_dirs=False, only_delete_symlinks=False):
 			shutil.rmtree(fpath)
 		else:
 			os.remove(fpath)
+
+def get_tags(song_path):
+	"""Returns a dictionary of media tags for a given file. Tags are normalized
+	across media types (meaning that keys returned are consistent even when the
+	files may use different key names).
+
+	Currently uses mutagen via a messy hack (directly calling a helper binary
+	in python2) since mutagen isn't currently available for python3."""
+
+	tag_path = os.path.dirname(os.path.realpath(__file__))
+	tag_path = os.path.join(tag_path, "lib", "tag.py")
+	
+	output = subprocess.check_output([tag_path, song_path]).decode("utf-8")
+	attrs = json.loads(output)
+
+	tags = {}
+	tag_names = {
+		"artist": ("artist", "performer", "composer"),
+		"title": ("title", "track", "name"),
+		"album": ("album",)
+	}
+
+	for key, names in tag_names.items():
+		# find first name in attrs
+		for name in names:
+			if name in attrs:
+				tags[key] = attrs[name]
+				break
+
+	return tags
