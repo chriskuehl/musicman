@@ -13,11 +13,13 @@ class Export(metaclass=ABCMeta):
 		"""Updates the export."""
 		pass
 
+	@abstractmethod
 	def serialize(self):
 		"""Returns a dictionary representing a serialized version of this
 		export configuration."""
 		return {"type": self.TYPE}
 
+	@abstractmethod
 	def unserialize(self, config):
 		"""Updates this (unconfigured) export to match the serialized config
 		represented by the dictionary given."""
@@ -42,8 +44,8 @@ class FlatDirExport(Export):
 
 		# symlink all music files into music_dir
 		for song in library.songs:
-			src = os.path.join(library.get_music_path(), song["filename"])
-			dest = os.path.join(self.music_dir, song["filename"])
+			src = os.path.join(library.get_music_path(), song.filename)
+			dest = os.path.join(self.music_dir, song.filename)
 			os.symlink(src, dest)
 
 	def serialize(self):
