@@ -128,7 +128,10 @@ class AutoPlaylist(Playlist):
 	rules."""
 	
 	TYPE = "auto"
-	condition = {"type": "and", "conditions": []}
+	conditions = []
+
+	def get_conditions(self):
+		return {"type": "and", "conditions": self.conditions}
 
 	def get_songs(self, library):
 		return [song for _, song in library.songs.items() if self.matches(song)]
@@ -153,18 +156,18 @@ class AutoPlaylist(Playlist):
 
 				return condition["func"](clean(val), match)
 
-		return matches_condition(self.condition)
+		return matches_condition(self.get_conditions())
 
 	def serialize(self):
 		config = super().serialize()
-		config["condition"] = self._serialize_conditions()
+		config["conditions"] = self._serialize_conditions()
 		return config
 
 	def _serialize_conditions(self):
 		def serialize_condition(condition):
 			"""Turns a given condition into a list representing that condition,
 			with particular emphasis on human readability of the serialized
-			conditions (represented in JSON)."""
+			condition (represented in JSON)."""
 
 			if condition["type"] in ("and", "or"):
 				conditions = [serialize_condition(c) for c in condition["conditions"]]
@@ -177,7 +180,7 @@ class AutoPlaylist(Playlist):
 
 		# all conditions are implicitly wrapped in an "and" block, which we
 		# don't serialize (so strip it before returning)
-		return serialize_condition(self.condition)[1]
+		return serialize_condition(self.get_conditions())[1]
 
 
 	def unserialize(self, config, library):
@@ -211,7 +214,9 @@ class AutoPlaylist(Playlist):
 				raise Exception()
 
 		super().unserialize(config, library)
-		self.condition = unserialize_condition(["and", config["condition"]])
+
+		# strip the and off since it's implicit on the first condition
+		self.conditions = unserialize_condition(["and", config["conditions"]])["conditions"]
 
 PLAYLIST_CLASSES = (SimplePlaylist, AutoPlaylist)
 PLAYLIST_MAPPING = {plist.TYPE: plist for plist in PLAYLIST_CLASSES}
