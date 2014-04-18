@@ -125,14 +125,20 @@ def update_metadata():
 
 	library.save()
 
-def dump():
+def debug_dump():
 	"""Prints the serialized version of the library. Only useful for
 	debugging."""
 
 	library = get_library_or_die()
 	print(json.dumps(library.get_config(), indent=4))
 
-def shell():
+def debug_save():
+	"""Loads and saves the library without making changes. Useful for testing
+	serialization."""
+	library = get_library_or_die()
+	library.save()
+
+def debug_shell():
 	"""Launches a Python shell after loading the current library."""
 	library = get_library_or_die()
 
@@ -175,6 +181,7 @@ if __name__ == "__main__":
 	parser_debug = subparsers.add_parser("debug", help="debugging commands for testing musicman")
 	debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest="subcommand")
 	parser_dump = debug_subparsers.add_parser("dump", help="dumps library JSON")
+	parser_save = debug_subparsers.add_parser("save", help="loads and saves library without making changes")
 	parser_shell = debug_subparsers.add_parser("shell", help="loads library and starts a python interpreter")
 
 	args = parser.parse_args()
@@ -193,6 +200,8 @@ if __name__ == "__main__":
 		update_metadata()
 	elif args.command == "debug":
 		if args.subcommand == "dump":
-			dump()
+			debug_dump()
+		elif args.subcommand == "save":
+			debug_save()
 		elif args.subcommand == "shell":
-			shell()
+			debug_shell()
