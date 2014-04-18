@@ -18,12 +18,14 @@ FILENAME_MUSIC = "music"
 # files which should never be added to libraries (lowercase)
 FILE_BLACKLIST = (".ds_store", "thumbs.db", "itunes library.itl", "itunes music library.xml")
 
+# default list of permitted music extensions (can be adjusted per-library)
+MUSIC_EXTENSIONS = ["mp3", "mp4", "wav", "m4a", "flac"]
+
 class Library:
 	songs = []
-	exports = []
-
-	# default list of permitted music extensions (can be adjusted per-library)
-	extensions = ["mp3", "mp4", "wav", "m4a", "flac"]
+	exports = {}
+	playlists = {}
+	extensions = MUSIC_EXTENSIONS
 
 	def __init__(self, path):
 		self.path = path
@@ -117,6 +119,12 @@ class Library:
 
 	def load_config(self, config):
 		"""Loads a dictionary representing the library configuration."""
+
+		# use default values if none provided
+		for attr in ("exports", "playlists", "songs", "extensions"):
+			if not attr in config:
+				config[attr] = getattr(self, attr)
+		
 		self.extensions = config["extensions"]
 		self.exports = self._unserialize_exports(config["exports"])
 		self.playlists = self._unserialize_playlists(config["playlists"])
