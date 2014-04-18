@@ -41,9 +41,9 @@ class Playlist(metaclass=ABCMeta):
 				title = "{} - {}".format(
 					song.metadata["title"], song.metadata["artist"])
 
-			def sanitize(s):
-				valid = r'[a-zA-Z0-9\-_ ]'
-				return "".join([c for c in name if re.match(valid, c)])
+			def sanitize(title):
+				valid = r'[a-zA-Z0-9\-_ ()]'
+				return "".join([c for c in title if re.match(valid, c)])
 
 			yield "#EXTINF,{},{}".format(int(seconds), sanitize(title))
 			yield library.get_song_path(song.filename)
@@ -56,7 +56,7 @@ class SimplePlaylist(Playlist):
 	songs = []
 
 	def get_songs(self):
-		return songs
+		return self.songs
 
 	def serialize(self):
 		config = super().serialize()

@@ -47,6 +47,14 @@ class FlatDirExport(Export):
 			src = os.path.join(library.get_music_path(), song.filename)
 			dest = os.path.join(self.music_dir, song.filename)
 			os.symlink(src, dest)
+		
+		for name, playlist in library.playlists.items():
+			path = os.path.join(self.playlist_dir, name + ".m3u")
+
+			with open(path, "w") as f:
+				for line in playlist.get_m3u(library):
+					print(line, file=f)
+
 
 	def serialize(self):
 		config = super().serialize()

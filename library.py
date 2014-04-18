@@ -46,6 +46,19 @@ class Library:
 		with open(self.get_config_path()) as file:
 			self.load_config(json.load(file))
 
+	def load_config(self, config):
+		"""Loads a dictionary representing the library configuration."""
+
+		# use default values if none provided
+		for attr in ("exports", "playlists", "songs", "extensions"):
+			if not attr in config:
+				config[attr] = getattr(self, attr)
+
+		self.extensions = config["extensions"]
+		self.songs = self._unserialize_songs(config["songs"])
+		self.exports = self._unserialize_exports(config["exports"])
+		self.playlists = self._unserialize_playlists(config["playlists"])
+
 	def save(self):
 		"""Saves the library configuration to disk.
 		
@@ -116,19 +129,6 @@ class Library:
 			return plist
 
 		return {plist: unserialize_playlist(plists[plist]) for plist in plists}
-
-	def load_config(self, config):
-		"""Loads a dictionary representing the library configuration."""
-
-		# use default values if none provided
-		for attr in ("exports", "playlists", "songs", "extensions"):
-			if not attr in config:
-				config[attr] = getattr(self, attr)
-		
-		self.extensions = config["extensions"]
-		self.exports = self._unserialize_exports(config["exports"])
-		self.playlists = self._unserialize_playlists(config["playlists"])
-		self.songs = self._unserialize_songs(config["songs"])
 
 	# music management
 	def add_song(self, path, date_added=None, move=False):
