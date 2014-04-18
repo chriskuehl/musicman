@@ -22,7 +22,7 @@ FILE_BLACKLIST = (".ds_store", "thumbs.db", "itunes library.itl", "itunes music 
 MUSIC_EXTENSIONS = ["mp3", "mp4", "wav", "m4a", "flac"]
 
 class Library:
-	songs = []
+	songs = {}
 	exports = {}
 	playlists = {}
 	extensions = MUSIC_EXTENSIONS
@@ -95,7 +95,7 @@ class Library:
 
 			return data
 
-		return [serialize_song(song) for song in self.songs]
+		return {fname: serialize_song(song) for fname, song in self.songs.items()}
 
 	def _unserialize_songs(self, songs):
 		def unserialize_song(song):
@@ -104,7 +104,7 @@ class Library:
 			metadata = song["metadata"] if "metadata" in song else {}
 			return Song(filename, date_added, metadata)
 
-		return [unserialize_song(song) for song in songs]
+		return {fname: unserialize_song(song) for fname, song in songs.items()}
 
 	def _serialize_playlists(self):
 		return {plist: self.playlists[plist].serialize() for plist in self.playlists}
@@ -157,12 +157,11 @@ class Library:
 		except mio.UnableToReadTagsException:
 			print("Warning: Unable to read tags from `{}` (song still added to library)".format(path))
 
-		self.songs.append(song)
+		self.songs[song.filename] = song
 		return song
 	
 	def get_song(self, filename):
-		# TODO: represent songs as a dictionary of filename -> song object?
-		return next((song for song in self.songs if song.filename == filename), None)
+		return self.songs[filename]
 
 	# file and directory paths
 	def get_config_path(self):

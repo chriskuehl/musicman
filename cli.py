@@ -106,7 +106,7 @@ def update_metadata():
 	"""Refreshes metadata for all songs in the library."""
 	library = get_library_or_die()
 
-	for song in library.songs:
+	for _, song in library.songs.items():
 		path = library.get_song_path(song.filename)
 
 		try:

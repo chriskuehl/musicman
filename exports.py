@@ -43,7 +43,7 @@ class FlatDirExport(Export):
 		mio.ensure_empty_dir(self.playlist_dir, only_delete_symlinks=False)
 
 		# symlink all music files into music_dir
-		for song in library.songs:
+		for _, song in library.songs.items():
 			src = os.path.join(library.get_music_path(), song.filename)
 			dest = os.path.join(self.music_dir, song.filename)
 			os.symlink(src, dest)
