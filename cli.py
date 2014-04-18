@@ -162,9 +162,12 @@ if __name__ == "__main__":
 
 	parser_export = subparsers.add_parser("export", help="export library into another format")
 	parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
-	parser_dump = subparsers.add_parser("dump", help="dumps library JSON (for debugging serialization)")
-	parser_shell = subparsers.add_parser("shell",
-		help="loads library and starts a python interpreter (for debugging)")
+
+	# debugging
+	parser_debug = subparsers.add_parser("debug", help="debugging commands for testing musicman")
+	debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest="subcommand")
+	parser_dump = debug_subparsers.add_parser("dump", help="dumps library JSON")
+	parser_shell = debug_subparsers.add_parser("shell", help="loads library and starts a python interpreter")
 
 	args = parser.parse_args()
 
@@ -180,7 +183,8 @@ if __name__ == "__main__":
 		export()
 	elif args.command == "update-metadata":
 		update_metadata()
-	elif args.command == "dump":
-		dump()
-	elif args.command == "shell":
-		shell()
+	elif args.command == "debug":
+		if args.subcommand == "dump":
+			dump()
+		elif args.subcommand == "shell":
+			shell()
