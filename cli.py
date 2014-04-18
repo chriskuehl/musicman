@@ -36,6 +36,14 @@ def status():
 	print("Library information:")
 	print("\tPath: {}".format(library.path))
 	print("\t# of Songs: {}".format(len(library.songs)))
+
+	# playlists
+	print("\tPlaylists Configured ({}):".format(len(library.playlists)))
+
+	for name, playlist in library.playlists.items():
+		print("\t\t{}: {}".format(name, playlist))
+
+	# exports
 	print("\tExports Configured ({}):".format(len(library.exports)))
 
 	for name, export in library.exports.items():
