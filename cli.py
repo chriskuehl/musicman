@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Command-line interface to musicman
 import argparse
+import code
 import datetime
 import dateutil.parser
 import json
@@ -119,8 +120,17 @@ def update_metadata():
 def dump():
 	"""Prints the serialized version of the library. Only useful for
 	debugging."""
+
 	library = get_library_or_die()
 	print(json.dumps(library.get_config(), indent=4))
+
+def shell():
+	"""Launches a Python shell after loading the current library."""
+	library = get_library_or_die()
+
+	print("Your library is available: library={}".format(library))
+	print("To save changes, use library.save()")
+	code.interact(banner="", local=locals())
 
 def get_library_or_die():
 	"""Returns the library at the current working directory, or prints an error
@@ -153,6 +163,8 @@ if __name__ == "__main__":
 	parser_export = subparsers.add_parser("export", help="export library into another format")
 	parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
 	parser_dump = subparsers.add_parser("dump", help="dumps library JSON (for debugging serialization)")
+	parser_shell = subparsers.add_parser("shell",
+		help="loads library and starts a python interpreter (for debugging)")
 
 	args = parser.parse_args()
 
@@ -170,3 +182,5 @@ if __name__ == "__main__":
 		update_metadata()
 	elif args.command == "dump":
 		dump()
+	elif args.command == "shell":
+		shell()
