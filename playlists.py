@@ -122,19 +122,24 @@ CONDITIONS_MULTIPLE = {
 		lambda cur, rule: not any(r in cur for r in rule)
 }
 
+DEFAULT_SORT = ["artist", "title"]
+
 class AutoPlaylist(Playlist):
 	"""AutoPlaylist is an implementation of a dynamic playlist, with songs
 	being added, removed, and ordered automatically based on a defined set of
 	rules."""
 	
 	TYPE = "auto"
+	sort = DEFAULT_SORT
 	conditions = []
 
 	def get_conditions(self):
 		return {"type": "and", "conditions": self.conditions}
 
 	def get_songs(self, library):
-		return [song for _, song in library.songs.items() if self.matches(song)]
+		songs = [song for _, song in library.songs.items() if self.matches(song)]
+		sort = lambda song: tuple(song.metadata[field] for field in self.sort) # TODO: support more than metadata
+		return sorted(songs, key=sort)
 	
 	def matches(self, song):
 		def matches_condition(condition):
@@ -161,6 +166,7 @@ class AutoPlaylist(Playlist):
 	def serialize(self):
 		config = super().serialize()
 		config["conditions"] = self._serialize_conditions()
+		config["sort"] = self.sort
 		return config
 
 	def _serialize_conditions(self):
@@ -214,6 +220,8 @@ class AutoPlaylist(Playlist):
 				raise Exception()
 
 		super().unserialize(config, library)
+
+		self.sort = config["sort"] if "sort" in config else DEFAULT_SORT
 
 		# strip the and off since it's implicit on the first condition
 		self.conditions = unserialize_condition(["and", config["conditions"]])["conditions"]
