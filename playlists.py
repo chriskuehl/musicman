@@ -7,7 +7,7 @@ class Playlist(metaclass=ABCMeta):
 	TYPE = "unconfigured"
 
 	@abstractmethod
-	def get_songs(self):
+	def get_songs(self, library):
 		"""Returns a list of songs in order."""
 		pass
 
@@ -29,7 +29,7 @@ class Playlist(metaclass=ABCMeta):
 
 		yield "#EXTM3U"
 
-		for song in self.get_songs():
+		for song in self.get_songs(library):
 			yield ""
 
 			seconds = song.metadata["length"]
@@ -55,7 +55,7 @@ class SimplePlaylist(Playlist):
 	TYPE = "simple"
 	songs = []
 
-	def get_songs(self):
+	def get_songs(self, library):
 		return self.songs
 
 	def serialize(self):
@@ -67,22 +67,145 @@ class SimplePlaylist(Playlist):
 		super().unserialize(config, library)
 		self.songs = [library.get_song(fname) for fname in config["songs"]]
 
-# TODO: complete this
+
+# constants are used only internally; when serializing, we use english mappings
+# to maintain human readability and editability
+CONDITION_IS = 1
+CONDITION_IS_NOT = 2
+CONDITION_CONTAINS = 3
+CONDITION_DOES_NOT_CONTAIN = 4
+CONDITION_IN = 5
+CONDITION_NOT_IN = 6
+CONDITION_CONTAINS_ALL = 7
+CONDITION_CONTAINS_ANY = 8
+CONDITION_CONTAINS_NONE = 9
+
+# maps english phrase to internal constant
+CONDITION_MAPPING = {
+	"is": CONDITION_IS,
+	"is not": CONDITION_IS_NOT,
+	"contains": CONDITION_CONTAINS,
+	"does not contain": CONDITION_DOES_NOT_CONTAIN,
+	"in": CONDITION_IN,
+	"not in": CONDITION_NOT_IN,
+	"contains all": CONDITION_CONTAINS_ALL,
+	"contains any": CONDITION_CONTAINS_ANY,
+	"contains none": CONDITION_CONTAINS_NONE
+}
+
+# maps internal constant to english phrase
+CONDITION_MAPPING_REVERSE = {v: k for k, v in CONDITION_MAPPING.items()}
+
+# conditions on single values
+CONDITIONS_SINGLE = {
+	CONDITION_IS:
+		lambda cur, rule: cur == rule,
+	CONDITION_IS_NOT:
+		lambda cur, rule: cur != rule,
+	CONDITION_CONTAINS:
+		lambda cur, rule: rule in cur,
+	CONDITION_DOES_NOT_CONTAIN:
+		lambda cur, rule: rule not in cur,
+}
+
+# conditions on multiple values
+CONDITIONS_MULTIPLE = {
+	CONDITION_IN:
+		lambda cur, rule: cur in rule,
+	CONDITION_NOT_IN:
+		lambda cur, rule: cur not in rule,
+	CONDITION_CONTAINS_ALL:
+		lambda cur, rule: all(r in cur for r in rule),
+	CONDITION_CONTAINS_ANY:
+		lambda cur, rule: any(r in cur for r in rule),
+	CONDITION_CONTAINS_NONE:
+		lambda cur, rule: not any(r in cur for r in rule)
+}
+
 class AutoPlaylist(Playlist):
 	"""AutoPlaylist is an implementation of a dynamic playlist, with songs
 	being added, removed, and ordered automatically based on a defined set of
 	rules."""
 	
 	TYPE = "auto"
+	condition = {"type": "and", "conditions": []}
 
-	def get_songs(self):
-		return []
+	def get_songs(self, library):
+		return [song for _, song in library.songs.items() if self.matches(song)]
+	
+	def matches(self, song):
+		def matches_condition(condition):
+			if condition["type"] in ("and", "or"):
+				match = any if condition["type"] == "or" else all
+				return match(matches_condition(c) for c in condition["conditions"])
+			else:
+				# TODO: support more than just "metadata" (e.g. filename)
+				val = None
+				
+				if condition["attr"] in song.metadata:
+					val = song.metadata[condition["attr"]]
+
+				return condition["func"](val, condition["value"])
+
+		return matches_condition(self.condition)
 
 	def serialize(self):
-		return super().serialize()
+		config = super().serialize()
+		config["conditions"] = self._serialize_conditions()
+		return config
+
+	def _serialize_conditions(self):
+		def serialize_condition(condition):
+			"""Turns a given condition into a list representing that condition,
+			with particular emphasis on human readability of the serialized
+			conditions (represented in JSON)."""
+
+			if condition["type"] in ("and", "or"):
+				conditions = [serialize_condition(c) for c in condition["conditions"]]
+				return [condition["type"], conditions]
+
+			# not the most attractive format from our standpoint, but easy for
+			# humans to read: ['artist', 'in', ['Gorillaz', 'Radiohead']]
+			check = CONDITION_MAPPING_REVERSE[condition["type"]]
+			return [condition["attr"], check, condition["value"]]
+
+		# all conditions are implicitly wrapped in an "and" block, which we
+		# don't serialize (so strip it before returning)
+		return serialize_condition(self.condition)[1]
+
 
 	def unserialize(self, config, library):
+		def unserialize_condition(condition):
+			# TODO: better error messages on bad conditions
+
+			if len(condition) == 2:
+				if condition[0] in ("and", "or"):
+					return {
+						"type": condition[0],
+						"conditions": [unserialize_condition(c) for c in condition[1]]
+					}
+				else:
+					raise Exception()
+			elif len(condition) == 3:
+				# TODO: raises KeyError, make friendlier
+				check = CONDITION_MAPPING[condition[1]]
+
+				if isinstance(condition[2], list):
+					func = CONDITIONS_MULTIPLE[check]
+				else:
+					func = CONDITIONS_SINGLE[check]
+
+				return {
+					"type": check,
+					"attr": condition[0],
+					"value": condition[2],
+					"func": func
+				}
+			else:
+				raise Exception()
+
 		super().unserialize(config, library)
+		self.condition = unserialize_condition(["and", config["condition"]])
 
 PLAYLIST_CLASSES = (SimplePlaylist, AutoPlaylist)
 PLAYLIST_MAPPING = {plist.TYPE: plist for plist in PLAYLIST_CLASSES}
