@@ -139,19 +139,25 @@ class AutoPlaylist(Playlist):
 				match = any if condition["type"] == "or" else all
 				return match(matches_condition(c) for c in condition["conditions"])
 			else:
+				clean = lambda s: s.lower().strip() if s else None
+
 				# TODO: support more than just "metadata" (e.g. filename)
 				val = None
-				
 				if condition["attr"] in song.metadata:
 					val = song.metadata[condition["attr"]]
 
-				return condition["func"](val, condition["value"])
+				match = condition["value"]
+
+				if isinstance(match, list):
+					match = [clean(s) for s in match]
+
+				return condition["func"](clean(val), match)
 
 		return matches_condition(self.condition)
 
 	def serialize(self):
 		config = super().serialize()
-		config["conditions"] = self._serialize_conditions()
+		config["condition"] = self._serialize_conditions()
 		return config
 
 	def _serialize_conditions(self):

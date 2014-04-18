@@ -75,7 +75,7 @@ def add_files(library, paths, date_added, check_extension=True, recurse=True):
 		if os.path.isfile(path):
 			ext = os.path.splitext(path)[1][1:]
 
-			if check_extension and ext not in library.extensions:
+			if check_extension and ext.lower() not in library.extensions:
 				print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
 
 				if input("Add song anyway? [yN] ") != "y":
