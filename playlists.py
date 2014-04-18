@@ -122,15 +122,13 @@ CONDITIONS_MULTIPLE = {
 		lambda cur, rule: not any(r in cur for r in rule)
 }
 
-DEFAULT_SORT = ["artist", "title"]
-
 class AutoPlaylist(Playlist):
 	"""AutoPlaylist is an implementation of a dynamic playlist, with songs
 	being added, removed, and ordered automatically based on a defined set of
 	rules."""
 	
 	TYPE = "auto"
-	sort = DEFAULT_SORT
+	sort = ["artist", "title"]
 	conditions = []
 
 	def get_conditions(self):
@@ -221,7 +219,7 @@ class AutoPlaylist(Playlist):
 
 		super().unserialize(config, library)
 
-		self.sort = config["sort"] if "sort" in config else DEFAULT_SORT
+		self.sort = config["sort"] if "sort" in config else AutoPlaylist.sort
 
 		# strip the and off since it's implicit on the first condition
 		self.conditions = unserialize_condition(["and", config["conditions"]])["conditions"]

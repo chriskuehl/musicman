@@ -18,14 +18,13 @@ FILENAME_MUSIC = "music"
 # files which should never be added to libraries (lowercase)
 FILE_BLACKLIST = (".ds_store", "thumbs.db", "itunes library.itl", "itunes music library.xml")
 
-# default list of permitted music extensions (can be adjusted per-library)
-MUSIC_EXTENSIONS = ["mp3", "mp4", "wav", "m4a", "flac"]
-
 class Library:
 	songs = {}
 	exports = {}
 	playlists = {}
-	extensions = MUSIC_EXTENSIONS
+
+	# default list of permitted music extensions (can be adjusted per-library)
+	extensions = ["mp3", "mp4", "wav", "m4a", "flac"]
 
 	def __init__(self, path):
 		self.path = path
