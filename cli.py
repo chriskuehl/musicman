@@ -49,16 +49,16 @@ def status():
 	for name, export in library.exports.items():
 		print("\t\t{}: {}".format(name, export))
 
-def add(paths, date_added, check_extension=True, recurse=False):
+def add(paths, date_added, check_extension=True, recurse=False, no_bad_extensions=False):
 	"""Adds the song at path to the current library."""
 	library = get_library_or_die()
-	add_files(library, paths, date_added, check_extension=check_extension, recurse=recurse)
+	add_files(library, paths, date_added, check_extension=check_extension,
+		recurse=recurse, no_bad_extensions=no_bad_extensions)
 	library.save()
 
-def add_files(library, paths, date_added, check_extension=True, recurse=True):
+def add_files(library, paths, date_added, check_extension=True, recurse=True, no_bad_extensions=False):
 	"""Adds a list of paths to the given library, optionally recursing into
 	directories."""
-
 	for path in paths:
 		basename = os.path.basename(path)
 
@@ -78,7 +78,7 @@ def add_files(library, paths, date_added, check_extension=True, recurse=True):
 			if check_extension and ext.lower() not in library.extensions:
 				print("Unexpected music extension `{}` found for file `{}`.".format(ext, path))
 
-				if input("Add song anyway? [yN] ") != "y":
+				if no_bad_extensions or input("Add song anyway? [yN] ") != "y":
 					print("Skipping song.")
 					continue
 
@@ -94,7 +94,9 @@ def add_files(library, paths, date_added, check_extension=True, recurse=True):
 
 			print("Recursing into directory: {}".format(path))
 			new_paths = [os.path.join(path, p) for p in os.listdir(path)]
-			add_files(library, new_paths, date_added, check_extension=check_extension, recurse=recurse)
+			add_files(library, new_paths, date_added,
+				check_extension=check_extension, recurse=recurse,
+				no_bad_extensions=no_bad_extensions)
 		else:
 			print("Song doesn't exist: `{}`".format(path))
 			print("Skipping song.")
@@ -173,6 +175,8 @@ if __name__ == "__main__":
 		help="when the song was added (iso8601 format)")
 	parser_add.add_argument("--skip-check-extension", default=False, action="store_true",
 		help="skip checking file extension against preferred extension types")
+	parser_add.add_argument("--no-bad-extensions", default=False, action="store_true",
+		help="don't ask whether or not to add files with bad extensions (always assume no)")
 
 	parser_export = subparsers.add_parser("export", help="export library into another format")
 	parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
@@ -193,6 +197,7 @@ if __name__ == "__main__":
 	elif args.command == "add":
 		add(args.path, dateutil.parser.parse(args.date),
 			check_extension=not args.skip_check_extension,
+			no_bad_extensions=args.no_bad_extensions,
 			recurse=args.recurse)
 	elif args.command == "export":
 		export()
