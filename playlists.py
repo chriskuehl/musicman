@@ -32,7 +32,7 @@ class Playlist(metaclass=ABCMeta):
 		for song in self.get_songs(library):
 			yield ""
 
-			seconds = song.metadata["length"]
+			seconds = song.metadata["length"] if "length" in song.metadata else 0
 
 			# TODO: allow custom title formats for playlists
 			title = song.filename
@@ -136,7 +136,9 @@ class AutoPlaylist(Playlist):
 
 	def get_songs(self, library):
 		songs = [song for _, song in library.songs.items() if self.matches(song)]
-		sort = lambda song: tuple(song.metadata[field] for field in self.sort) # TODO: support more than metadata
+
+		key = lambda song, field: song.metadata[field] if field in song.metadata else song.filename
+		sort = lambda song: tuple(key(song, field) for field in self.sort) # TODO: support more than metadata
 		return sorted(songs, key=sort)
 	
 	def matches(self, song):
