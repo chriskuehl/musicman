@@ -38,23 +38,26 @@ class FlatDirExport(Export):
 	playlist_dir = None
 
 	def update(self, library):
-		# ensure directories exist and are empty
-		mio.ensure_empty_dir(self.music_dir, only_delete_symlinks=True)
-		mio.ensure_empty_dir(self.playlist_dir, only_delete_symlinks=False)
+		update_song_symlinks(library)
+		update_playlists(library)
 
-		# symlink all music files into music_dir
+	def update_song_symlinks(self, library):
+		mio.ensure_empty_dir(self.music_dir, only_delete_symlinks=True)
+
 		for _, song in library.songs.items():
 			src = os.path.join(library.get_music_path(), song.filename)
 			dest = os.path.join(self.music_dir, song.filename)
 			os.symlink(src, dest)
-		
+
+	def update_playlists(self, library):
+		mio.ensure_empty_dir(self.playlist_dir, only_delete_symlinks=False)
+
 		for name, playlist in library.playlists.items():
 			path = os.path.join(self.playlist_dir, name + ".m3u")
 
 			with open(path, "w") as f:
 				for line in playlist.get_m3u(library):
 					print(line, file=f)
-
 
 	def serialize(self):
 		config = super().serialize()

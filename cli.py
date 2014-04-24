@@ -22,7 +22,7 @@ def init():
 	if mlib.get_library(path):
 		print("Error: You're already inside a musicman library.")
 		sys.exit(1)
-	
+
 	library = mlib.Library(path)
 	library.init()
 	library.save()
@@ -70,7 +70,7 @@ def add_files(library, paths, date_added, check_extension=True, recurse=True, no
 		if basename.startswith("."):
 			print("Skipping hidden file/directory: `{}`.".format(path))
 			continue
-		
+
 		# add files, recurse into directories
 		if os.path.isfile(path):
 			ext = os.path.splitext(path)[1][1:]
