@@ -38,8 +38,8 @@ class FlatDirExport(Export):
 	playlist_dir = None
 
 	def update(self, library):
-		update_song_symlinks(library)
-		update_playlists(library)
+		self.update_song_symlinks(library)
+		self.update_playlists(library)
 
 	def update_song_symlinks(self, library):
 		mio.ensure_empty_dir(self.music_dir, only_delete_symlinks=True)
