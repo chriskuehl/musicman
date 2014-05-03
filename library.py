@@ -16,7 +16,7 @@ FILENAME_CONFIG = "musicman.json"
 FILENAME_MUSIC = "music"
 
 # files which should never be added to libraries (lowercase)
-FILE_BLACKLIST = (".ds_store", "thumbs.db", "itunes library.itl", "itunes music library.xml")
+FILE_BLACKLIST = {".ds_store", "thumbs.db", "itunes library.itl", "itunes music library.xml"}
 
 class Library:
 	songs = {}
