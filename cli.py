@@ -11,6 +11,7 @@ import sys
 
 import musicman.io as mio
 import musicman.library as mlib
+import musicman.playlists as mplaylists
 
 HELP_DESCRIPTION = "Manage musicman libraries"
 HELP_EPILOG = "Try command --help to see required arguments."
@@ -127,6 +128,36 @@ def update_metadata():
 
 	library.save()
 
+def playlist_new():
+	"""Creates a new playlist."""
+	library = get_library_or_die()
+	
+	# playlist name
+	def cond_not_plist(s):
+		return None if s not in library.playlists else "That playlist already exists."
+
+	name = read("Playlist name:", lambda s: cond_not_blank(s) or cond_not_plist(s))
+
+	# playlist type
+	print("Choose a playlist type:")
+	print("\t- simple (add and order songs manually)")
+	print("\t- auto (define rules for inclusion and sorting)")
+	
+	def cond_plist_type(s):
+		return None if s in ("", "auto", "simple") else "Enter either `simple` or `auto`"
+
+	ptype = read("Playlist type [simple]:", lambda s: cond_plist_type(s)) or "simple"
+
+	if ptype == "simple":
+		plist = mplaylists.SimplePlaylist()
+	elif ptype == "auto":
+		plist = mplaylists.AutoPlaylist()
+
+	library.playlists[name] = plist
+	print("Playlist `{}` added.".format(name))
+
+	library.save()
+
 def debug_dump():
 	"""Prints the serialized version of the library. Only useful for
 	debugging."""
@@ -147,6 +178,32 @@ def debug_shell():
 	print("Your library is available: library={}".format(library))
 	print("To save changes, use library.save()")
 	code.interact(banner="", local=locals())
+
+
+# reading from command prompt helpers
+def cond_any(s):
+	"""Accepts any input."""
+	return None
+
+def cond_not_blank(s):
+	"""Accepts any non-blank input"""
+	return None if s else "Please enter a response."
+
+def read(prompt, error):
+	"""Reads from command-line with given prompt and validates with the given
+	error function.
+
+	If the error function returns a non-falsey value, it is printed and the
+	user is prompted again."""
+
+	while True:
+		val = input(prompt + " ").strip()
+		e = error(val)
+
+		if not e:
+			return val
+
+		print(e)
 
 def get_library_or_die():
 	"""Returns the library at the current working directory, or prints an error
@@ -178,6 +235,10 @@ if __name__ == "__main__":
 	parser_add.add_argument("--no-bad-extensions", default=False, action="store_true",
 		help="don't ask whether or not to add files with bad extensions (always assume no)")
 
+	parser_playlist = subparsers.add_parser("playlist", help="manage playlists")
+	playlist_subparsers = parser_playlist.add_subparsers(title="available subcommands", dest="subcommand")
+	parser_playlist_add = playlist_subparsers.add_parser("new", help="create a new playlist")
+
 	parser_export = subparsers.add_parser("export", help="export library into another format")
 	parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
 
@@ -203,6 +264,9 @@ if __name__ == "__main__":
 		export()
 	elif args.command == "update-metadata":
 		update_metadata()
+	elif args.command == "playlist":
+		if args.subcommand == "new":
+			playlist_new()
 	elif args.command == "debug":
 		if args.subcommand == "dump":
 			debug_dump()
