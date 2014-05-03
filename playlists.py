@@ -137,8 +137,8 @@ class AutoPlaylist(Playlist):
 	def get_songs(self, library):
 		songs = [song for _, song in library.songs.items() if self.matches(song)]
 
-		key = lambda song, field: song.metadata[field] if field in song.metadata else song.filename
-		sort = lambda song: tuple(key(song, field) for field in self.sort) # TODO: support more than metadata
+#		key = lambda song, field: song.get_attr(field)
+		sort = lambda song: tuple(song.get_attr(field) or "" for field in self.sort)
 		return sorted(songs, key=sort)
 	
 	def matches(self, song):
@@ -149,11 +149,7 @@ class AutoPlaylist(Playlist):
 			else:
 				clean = lambda s: s.lower().strip() if s else None
 
-				# TODO: support more than just "metadata" (e.g. filename)
-				val = None
-				if condition["attr"] in song.metadata:
-					val = song.metadata[condition["attr"]]
-
+				val = song.get_attr(condition["attr"])
 				match = condition["value"]
 
 				if isinstance(match, list):

@@ -184,6 +184,8 @@ class Library:
 		return os.path.join(self.get_music_path(), filename)
 
 class Song:
+	ALLOWED_ATTRS = ("filename", "date_added")
+
 	def __init__(self, filename, date_added, metadata):
 		self.filename = filename
 		self.date_added = date_added
@@ -191,6 +193,19 @@ class Song:
 
 	def update_metadata(self, path):
 		self.metadata = mio.get_tags(path)
+
+	def get_attr(self, attr):
+		"""Returns the requested attribute, where attr can be either some
+		library-specific attribute (like date added), or song-specific metadata
+		(like title or song length)."""
+
+		if attr in Song.ALLOWED_ATTRS:
+			return self.getattr(attr)
+
+		if attr in self.metadata:
+			return self.metadata[attr]
+
+		return None
 
 def gen_filename(path):
 	"""Generates a file name a given song. Tries to be fairly conservative in
