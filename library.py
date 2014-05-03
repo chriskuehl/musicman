@@ -29,7 +29,7 @@ class Library:
 	def __init__(self, path):
 		self.path = path
 
-	def init(self):
+	def init(self, skip_defaults=False):
 		"""Sets up a new library for the first time, creating necessary
 		configuration files and adding base config."""
 
@@ -39,6 +39,17 @@ class Library:
 			if ex.errno != errno.EEXIST:
 				raise
 			print("Warning: `music` directory already existed, ignoring...")
+
+		if not skip_defaults:
+			self.set_defaults()
+
+	def set_defaults(self):
+		"""Add default config for new libraries. None of these are necessary to
+		the functioning of the library, so could be skipped if desired."""
+
+		if not "last-added" in self.playlists:
+			# TODO: sorting options (once it's possible to sort by last added)
+			self.playlists["last-added"] = mplaylists.AutoPlaylist()
 
 	def load(self):
 		"""Loads the library configuration from disk."""
