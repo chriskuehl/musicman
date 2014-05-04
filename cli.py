@@ -7,7 +7,10 @@ import dateutil.parser
 import json
 import os
 import os.path
+import shutil
+import subprocess
 import sys
+import tempfile
 
 import musicman.imports as mimports
 import musicman.io as mio
@@ -159,6 +162,36 @@ def playlist_new():
 
 	library.save()
 
+def vi():
+	"""Opens the configuration file in the user's text editor, and validates it
+	(printing any error messages) upon save."""
+	library = get_library_or_die()
+
+	editor = get_default_editor()
+	dpath = tempfile.mkdtemp()
+	fpath = os.path.join(dpath, mlib.FILENAME_CONFIG)
+
+	shutil.copyfile(library.get_config_path(), fpath)
+
+	while True:
+		subprocess.check_call((editor, fpath))
+
+		try:
+			new_library = mlib.Library(dpath)
+			new_library.load()
+		except ValueError as e:
+			print("Error loading new library:")
+			print("\t{}".format(e))
+			input("Press enter to continue.")
+		else:
+			break
+
+	shutil.copyfile(fpath, library.get_config_path())
+	shutil.rmtree(dpath)
+
+def get_default_editor():
+	return os.environ.get("VISUAL") or os.environ.get("EDITOR") or "vi"
+
 def import_banshee():
 	"""Imports a banshee library."""
 	library = get_library_or_die()
@@ -271,6 +304,8 @@ if __name__ == "__main__":
 			help="imports a library into musicman, without modifying the existing library")
 	parser_import.add_argument("source", type=str, choices=("banshee",), help="type of library to import")
 
+	parser_vi = subparsers.add_parser("vi", help="modify musicman config file")
+
 	# debugging
 	parser_debug = subparsers.add_parser("debug", help="debugging commands for testing musicman")
 	debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest="subcommand")
@@ -296,6 +331,8 @@ if __name__ == "__main__":
 	elif args.command == "playlist":
 		if args.subcommand == "new":
 			playlist_new()
+	elif args.command == "vi":
+		vi()
 	elif args.command == "import":
 		if args.source == "banshee":
 			import_banshee()
