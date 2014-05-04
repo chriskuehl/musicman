@@ -9,6 +9,7 @@ import os
 import os.path
 import sys
 
+import musicman.imports as mimports
 import musicman.io as mio
 import musicman.library as mlib
 import musicman.playlists as mplaylists
@@ -146,7 +147,7 @@ def playlist_new():
 	def cond_plist_type(s):
 		return None if s in ("", "auto", "simple") else "Enter either `simple` or `auto`"
 
-	ptype = read("Playlist type [simple]:", lambda s: cond_plist_type(s)) or "simple"
+	ptype = read("Playlist type [simple]:", cond_plist_type) or "simple"
 
 	if ptype == "simple":
 		plist = mplaylists.SimplePlaylist()
@@ -157,6 +158,30 @@ def playlist_new():
 	print("Playlist `{}` added.".format(name))
 
 	library.save()
+
+def import_banshee():
+	"""Imports a banshee library."""
+	library = get_library_or_die()
+
+	# find banshee directory
+	print("Where is the banshee library stored?")
+	print("")
+	print("Your banshee library directory contains a file called `banshee.db`, which we need to read.")
+	print("By default, this directory lives at `~/.config/banshee-1`. Please enter the path to the directory.")
+
+	banshee_db = lambda dir: os.path.join(os.path.expanduser(dir), "banshee.db")
+
+	def cond_banshee_dir(dir):
+		db = banshee_db(dir)
+
+		if not os.path.isfile(db):
+			return "Couldn't find `{}`, are you sure this is a banshee directory?".format(db)
+
+		return None
+
+	dir = read("Banshee library location:", cond_banshee_dir)
+	db = banshee_db(dir)
+
 
 def debug_dump():
 	"""Prints the serialized version of the library. Only useful for
@@ -242,6 +267,10 @@ if __name__ == "__main__":
 	parser_export = subparsers.add_parser("export", help="export library into another format")
 	parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
 
+	parser_import = subparsers.add_parser("import",
+			help="imports a library into musicman, without modifying the existing library")
+	parser_import.add_argument("source", type=str, choices=("banshee",), help="type of library to import")
+
 	# debugging
 	parser_debug = subparsers.add_parser("debug", help="debugging commands for testing musicman")
 	debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest="subcommand")
@@ -267,6 +296,9 @@ if __name__ == "__main__":
 	elif args.command == "playlist":
 		if args.subcommand == "new":
 			playlist_new()
+	elif args.command == "import":
+		if args.source == "banshee":
+			import_banshee()
 	elif args.command == "debug":
 		if args.subcommand == "dump":
 			debug_dump()
