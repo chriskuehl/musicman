@@ -162,6 +162,16 @@ def playlist_new():
 
 	library.save()
 
+def playlist_list():
+	"""Lists playlists."""
+	library = get_library_or_die()
+
+	print("Playlists ({}):".format(len(library.playlists)))
+
+	# TODO: number of songs per playlist, better stats
+	for name, playlist in library.playlists.items():
+		print("\t{}: {}".format(name, playlist))
+
 def vi():
 	"""Opens the configuration file in the user's text editor, and validates it
 	(printing any error messages) upon save."""
@@ -296,6 +306,7 @@ if __name__ == "__main__":
 	parser_playlist = subparsers.add_parser("playlist", help="manage playlists")
 	playlist_subparsers = parser_playlist.add_subparsers(title="available subcommands", dest="subcommand")
 	parser_playlist_add = playlist_subparsers.add_parser("new", help="create a new playlist")
+	parser_playlist_list = playlist_subparsers.add_parser("list", help="lists playlists")
 
 	parser_export = subparsers.add_parser("export", help="export library into another format")
 	parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
@@ -331,6 +342,8 @@ if __name__ == "__main__":
 	elif args.command == "playlist":
 		if args.subcommand == "new":
 			playlist_new()
+		elif args.subcommand == "list":
+			playlist_list()
 	elif args.command == "vi":
 		vi()
 	elif args.command == "import":
