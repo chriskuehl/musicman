@@ -6,6 +6,7 @@ import os
 import os.path
 import re
 import shutil
+import sys
 import tempfile
 
 import musicman.exports as mexports
