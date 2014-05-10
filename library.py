@@ -49,8 +49,8 @@ class Library:
 		the functioning of the library, so could be skipped if desired."""
 
 		if not "last-added" in self.playlists:
-			# TODO: sorting options (once it's possible to sort by last added)
 			self.playlists["last-added"] = mplaylists.AutoPlaylist()
+			self.playlists["last-added"].sort = ["!last_added", "artist", "title"]
 
 	def load(self):
 		"""Loads the library configuration from disk."""
