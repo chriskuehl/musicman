@@ -248,7 +248,8 @@ def import_banshee():
 
 		library.add_song(song["path"], date_added=song["date_added"])
 		imported += 1
-	
+
+	library.save()
 	print("Imported {} new songs (out of {} in Banshee library)".format(imported, total))
 
 def debug_dump():
