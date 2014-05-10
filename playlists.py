@@ -136,8 +136,6 @@ class AutoPlaylist(Playlist):
 
 	def get_songs(self, library):
 		songs = [song for _, song in library.songs.items() if self.matches(song)]
-
-#		key = lambda song, field: song.get_attr(field)
 		sort = lambda song: tuple(song.get_attr(field) or "" for field in self.sort)
 		return sorted(songs, key=sort)
 	

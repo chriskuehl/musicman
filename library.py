@@ -201,7 +201,7 @@ class Song:
 		(like title or song length)."""
 
 		if attr in Song.ALLOWED_ATTRS:
-			return self.getattr(attr)
+			return getattr(self, attr)
 
 		if attr in self.metadata:
 			return self.metadata[attr]
