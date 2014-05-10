@@ -224,7 +224,32 @@ def import_banshee():
 
 	dir = read("Banshee library location:", cond_banshee_dir)
 	db = banshee_db(dir)
+	songs = mimports.banshee_get_songs(db)
+	imported = 0
+	total = 0
 
+	for song in songs:
+		total += 1
+
+		if not os.path.isfile(song["path"]):
+			print("Can't import `{}` (file doesn't exist)".format(song["path"]))
+			continue
+		
+		# TODO: make this more generic to share with add
+		# TODO: option to skip this check and reject all files not matching
+		ext = os.path.splitext(song["path"])[1][1:]
+
+		if ext.lower() not in library.extensions:
+			print("Unexpected music extension `{}` found for file `{}`.".format(ext, song["path"]))
+
+			if input("Add song anyway? [yN] ") != "y":
+				print("Skipping song.")
+				continue
+
+		library.add_song(song["path"], date_added=song["date_added"])
+		imported += 1
+	
+	print("Imported {} new songs (out of {} in Banshee library)".format(imported, total))
 
 def debug_dump():
 	"""Prints the serialized version of the library. Only useful for
