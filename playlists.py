@@ -139,35 +139,14 @@ class AutoPlaylist(Playlist):
 	def get_songs(self, library):
 		songs = [song for _, song in library.songs.items() if self.matches(song)]
 
-		# TODO: clean this up
-		def reverse_key(key):
-			"""Reverses a string for use as a reverse sort key."""
-			if isinstance(key, str):
-				return "".join(chr(255 - ord(c)) for c in key)
+		# sort on least-significant fields first since sort is stable
+		for field in reversed(self.sort):
+			reverse = field.startswith("!")
+			if reverse:
+				field = field[1:]
+			songs.sort(key=lambda song: song.get_attr(field) or "", reverse=reverse)
 
-			return -key
-
-		def sort_val(key):
-			"""Returns a sortable version of key."""
-			if isinstance(key, datetime.datetime):
-				return time.mktime(key.timetuple())
-
-			return key
-
-		def sort_key(song):
-			"""Returns a tuple of sort keys for a given string, all of which
-			will be strings. Not guaranteed to be human-readable (e.g. reverse
-			sort transforms strings into "negated" strings)"""
-
-			def key(field):
-				"""Returns the sort key for a single search field."""
-				reverse = field.startswith("!")
-				key = sort_val(song.get_attr(field[1:] if reverse else field) or "")
-				return reverse_key(key) if reverse else key
-
-			return tuple(key(field) for field in self.sort)
-
-		return sorted(songs, key=sort_key)
+		return songs
 	
 	def matches(self, song):
 		def matches_condition(condition):
