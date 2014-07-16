@@ -25,7 +25,7 @@ def ensure_dir(path):
 		print("Error: Path exists but isn't a directory `{}`".format(parent_dir))
 		print("\tFailed when creating directory `{}`".format(path))
 		sys.exit(1)
-	
+
 	if not os.path.exists(path):
 		os.mkdir(path)
 
@@ -33,7 +33,7 @@ def ensure_empty_dir(path, allow_delete_dirs=False, only_delete_symlinks=False):
 	"""Ensures that the given path is an empty directory, subject to the
 	conditions in ensure_dir (fails if parent directory doesn't exist, or the
 	path exists and is a file).
-	
+
 	The optional parameters allow_delete_dirs and only_delete_symlinks provide
 	safety (e.g. to avoid accidentally deleting the entire home directory if
 	you mistype some path)."""
@@ -68,7 +68,7 @@ def get_tags(song_path):
 
 	tag_path = os.path.dirname(os.path.realpath(__file__))
 	tag_path = os.path.join(tag_path, "lib", "tag.py")
-	
+
 	try:
 		output = subprocess.check_output([tag_path, song_path], stderr=open(os.devnull)).decode("utf-8")
 	except subprocess.CalledProcessError:
