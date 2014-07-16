@@ -50,7 +50,7 @@ class Library:
 
 		if not "last-added" in self.playlists:
 			self.playlists["last-added"] = mplaylists.AutoPlaylist()
-			self.playlists["last-added"].sort = ["!last_added", "artist", "title"]
+			self.playlists["last-added"].sort = ["!date_added", "artist", "title"]
 
 	def load(self):
 		"""Loads the library configuration from disk."""
