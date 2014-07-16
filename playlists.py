@@ -117,11 +117,11 @@ CONDITIONS_MULTIPLE = {
 	CONDITION_NOT_IN:
 		lambda cur, rule: cur not in rule,
 	CONDITION_CONTAINS_ALL:
-		lambda cur, rule: all(r in cur for r in rule),
+		lambda cur, rule: all(r in cur for r in rule if cur),
 	CONDITION_CONTAINS_ANY:
-		lambda cur, rule: any(r in cur for r in rule),
+		lambda cur, rule: any(r in cur for r in rule if cur),
 	CONDITION_CONTAINS_NONE:
-		lambda cur, rule: not any(r in cur for r in rule)
+		lambda cur, rule: not any(r in cur for r in rule if cur)
 }
 
 class AutoPlaylist(Playlist):
