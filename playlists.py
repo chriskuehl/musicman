@@ -128,7 +128,7 @@ class AutoPlaylist(Playlist):
 	"""AutoPlaylist is an implementation of a dynamic playlist, with songs
 	being added, removed, and ordered automatically based on a defined set of
 	rules."""
-	
+
 	TYPE = "auto"
 	sort = ["artist", "title"]
 	conditions = []
@@ -147,7 +147,7 @@ class AutoPlaylist(Playlist):
 			songs.sort(key=lambda song: song.get_attr(field) or "", reverse=reverse)
 
 		return songs
-	
+
 	def matches(self, song):
 		def matches_condition(condition):
 			if condition["type"] in ("and", "or"):

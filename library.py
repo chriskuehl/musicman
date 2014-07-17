@@ -72,7 +72,7 @@ class Library:
 
 	def save(self):
 		"""Saves the library configuration to disk.
-		
+
 		First saves to a temporary file and then moves to the proper location
 		to avoid destroying the library if an exception occurs while dumping
 		the config."""
@@ -170,7 +170,7 @@ class Library:
 
 		self.songs[song.filename] = song
 		return song
-	
+
 	def get_song(self, filename):
 		return self.songs[filename]
 
@@ -211,7 +211,7 @@ class Song:
 def gen_filename(path):
 	"""Generates a file name a given song. Tries to be fairly conservative in
 	what characters are allowed, but still readable.
-	
+
 	>>> gen_filename("~/Music/Televisor/01. Old Skool (Nitro Fun Remix).flac")
 	'01-Old-Skool-Nitro-Fun-Remix.flac'
 	"""

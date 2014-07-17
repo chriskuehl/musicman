@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
 	if not f_easy or not f_hard:
 		sys.exit("unable to read file")
-	
+
 	tags = dict((k, v[0]) for (k, v) in f_easy.iteritems())
 
 	if f_hard.info.length > 0:

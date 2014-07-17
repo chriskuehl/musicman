@@ -135,7 +135,7 @@ def update_metadata():
 def playlist_new():
 	"""Creates a new playlist."""
 	library = get_library_or_die()
-	
+
 	# playlist name
 	def cond_not_plist(s):
 		return None if s not in library.playlists else "That playlist already exists."
@@ -146,7 +146,7 @@ def playlist_new():
 	print("Choose a playlist type:")
 	print("\t- simple (add and order songs manually)")
 	print("\t- auto (define rules for inclusion and sorting)")
-	
+
 	def cond_plist_type(s):
 		return None if s in ("", "auto", "simple") else "Enter either `simple` or `auto`"
 
@@ -234,7 +234,7 @@ def import_banshee():
 		if not os.path.isfile(song["path"]):
 			print("Can't import `{}` (file doesn't exist)".format(song["path"]))
 			continue
-		
+
 		# TODO: make this more generic to share with add
 		# TODO: option to skip this check and reject all files not matching
 		ext = os.path.splitext(song["path"])[1][1:]
