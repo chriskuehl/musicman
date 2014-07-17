@@ -161,6 +161,8 @@ class AutoPlaylist(Playlist):
 
 				if isinstance(match, list):
 					match = [clean(s) for s in match]
+				else:
+					match = clean(match)
 
 				return condition["func"](clean(val), match)
 
