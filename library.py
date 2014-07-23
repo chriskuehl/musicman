@@ -80,7 +80,7 @@ class Library:
 		handle, path = tempfile.mkstemp()
 
 		with open(handle, "w") as file:
-			json.dump(self.get_config(), file, indent=4)
+			json.dump(self.get_config(), file, indent=4, sort_keys=True)
 
 		shutil.move(path, self.get_config_path())
 
