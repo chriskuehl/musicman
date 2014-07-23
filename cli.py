@@ -61,6 +61,31 @@ def add(paths, date_added, check_extension=True, recurse=False, no_bad_extension
 		recurse=recurse, no_bad_extensions=no_bad_extensions)
 	library.save()
 
+def remove(filenames):
+	"""Removes the specified songs from the library. Doesn't touch media
+	files for safety (`musicman clean` will handle this)."""
+	library = get_library_or_die()
+	errors = removed = 0
+
+	for filename in filenames:
+		if filename in library.songs:
+			removed += 1
+			library.remove_song(filename)
+		else:
+			errors += 1
+			print("File not found in library: `{}`.".format(filename))
+
+			if len(filenames) == errors or input("Continue removing other files? [yN] ") != "y":
+				print("Aborting.")
+				return
+
+	if input("Remove {} song(s)? [yN]".format(removed)) != "y":
+		print("Aborting.")
+		return
+
+	library.save()
+
+
 def add_files(library, paths, date_added, check_extension=True, recurse=True, no_bad_extensions=False):
 	"""Adds a list of paths to the given library, optionally recursing into
 	directories."""
@@ -329,6 +354,9 @@ if __name__ == "__main__":
 	parser_add.add_argument("--no-bad-extensions", default=False, action="store_true",
 		help="don't ask whether or not to add files with bad extensions (always assume no)")
 
+	parser_rm = subparsers.add_parser("rm", help="remove music file from library")
+	parser_rm.add_argument("files", type=str, nargs="+", help="filename(s) to remove")
+
 	parser_playlist = subparsers.add_parser("playlist", help="manage playlists")
 	playlist_subparsers = parser_playlist.add_subparsers(title="available subcommands", dest="subcommand")
 	parser_playlist_add = playlist_subparsers.add_parser("new", help="create a new playlist")
@@ -361,6 +389,8 @@ if __name__ == "__main__":
 			check_extension=not args.skip_check_extension,
 			no_bad_extensions=args.no_bad_extensions,
 			recurse=args.recurse)
+	elif args.command == "rm":
+		remove(args.files)
 	elif args.command == "export":
 		export()
 	elif args.command == "update-metadata":

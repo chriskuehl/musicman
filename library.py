@@ -171,6 +171,15 @@ class Library:
 		self.songs[song.filename] = song
 		return song
 
+	def remove_song(self, filename):
+		"""Removes the given song from the library, without removing the media
+		file."""
+
+		if filename in self.songs:
+			del self.songs[filename]
+		else:
+			raise ValueError("File `{}` is not in library".format(filename))
+
 	def get_song(self, filename):
 		return self.songs[filename]
 
