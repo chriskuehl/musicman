@@ -107,7 +107,7 @@ CONDITIONS_SINGLE = {
 	CONDITION_CONTAINS:
 		lambda cur, rule: cur and rule in cur,
 	CONDITION_DOES_NOT_CONTAIN:
-		lambda cur, rule: cur or rule not in cur,
+		lambda cur, rule: not cur or rule not in cur,
 }
 
 # conditions on multiple values
