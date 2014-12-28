@@ -339,6 +339,7 @@ def get_library_or_die():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=HELP_DESCRIPTION, epilog=HELP_EPILOG)
     subparsers = parser.add_subparsers(title="available commands", dest="command")
+    subparsers.required = True
 
     parser_init = subparsers.add_parser("init", help="initialize new library")
     parser_status = subparsers.add_parser("status", help="print status about library")
