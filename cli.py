@@ -322,13 +322,20 @@ def select_song(library):
             print("Choose from {} songs:".format(len(songs)))
 
             for i, (key, song) in enumerate(songs):
-                print("{i}) {title} ({artist})".format(
+                artist_width = 15
+                title_width = 35
+                print("{i:>2} | {artist: <{artist_width}} | {title:<{title_width}}".format(
+                    artist_width=artist_width,
+                    title_width=title_width,
                     i=i,
-                    title=song.get_attr('title') or '(untitled)',
-                    artist=song.get_attr('artist') or '(unknown artist)'))
+                    title=(song.get_attr('title') or '(untitled)')[:title_width],
+                    artist=(song.get_attr('artist') or '(unknown artist)')[:artist_width]))
 
             print("Enter number or search term:")
         term = input()
+
+        if len(term) == 0:
+            return select_song(library)
 
         try:
             int_term = int(term)
