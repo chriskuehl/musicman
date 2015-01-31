@@ -61,6 +61,18 @@ def add(paths, date_added, check_extension=True, recurse=False, no_bad_extension
         recurse=recurse, no_bad_extensions=no_bad_extensions)
     library.save()
 
+def replace(path):
+    """Replace a song in the library with the one given on the path. Useful for
+    upgrading to higher quality songs without losing metadata."""
+
+    library = get_library_or_die()
+    print("Choose a song to replace.")
+    song = select_song(library)
+    add_files(library, [path], song.get_attr('date_added'),
+              check_extension=True, recurse=False, no_bad_extensions=True)
+    library.remove_song(song.get_attr('filename'))
+    library.save()
+
 def remove(filenames):
     """Removes the specified songs from the library. Doesn't touch media
     files for safety (`musicman clean` will handle this)."""
@@ -404,6 +416,9 @@ if __name__ == "__main__":
     parser_add.add_argument("--no-bad-extensions", default=False, action="store_true",
         help="don't ask whether or not to add files with bad extensions (always assume no)")
 
+    parser_replace = subparsers.add_parser("replace", help="replace music file in library with another")
+    parser_replace.add_argument("path", type=str, help="path to file to replace with")
+
     parser_rm = subparsers.add_parser("rm", help="remove music file from library")
     parser_rm.add_argument("files", type=str, nargs="+", help="filename(s) to remove")
 
@@ -440,6 +455,8 @@ if __name__ == "__main__":
             check_extension=not args.skip_check_extension,
             no_bad_extensions=args.no_bad_extensions,
             recurse=args.recurse)
+    elif args.command == 'replace':
+        replace(args.path)
     elif args.command == 'rm':
         remove(args.files)
     elif args.command == 'export':
