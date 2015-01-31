@@ -342,7 +342,7 @@ def select_song(library):
             search = search.lower()
 
             if all(word.lower() in search for word in term.split()) or \
-                    (int_term and i == int_term):
+                    (int_term is not None and i == int_term):
                 new_songs.append(song)
 
         if len(new_songs) == 0:
