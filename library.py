@@ -201,6 +201,9 @@ class Song:
         self.date_added = date_added
         self.metadata = metadata
 
+    def __str__(self):
+        return "Song({} - {})".format(self.get_attr('artist'), self.get_attr('title'))
+
     def update_metadata(self, path):
         self.metadata = mio.get_tags(path)
 

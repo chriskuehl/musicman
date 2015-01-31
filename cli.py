@@ -299,6 +299,55 @@ def debug_shell():
     code.interact(banner="", local=locals())
 
 
+def select_song(library):
+    songs = sorted(list(library.songs.items()),
+                   key=lambda song: song[1].get_attr('title') or '')
+
+    while len(songs) != 1:
+        if len(songs) > 30:
+            print("Choose from {} songs. Enter search term:".format(len(songs)))
+        else:
+            print("Choose from {} songs:".format(len(songs)))
+
+            for i, (key, song) in enumerate(songs):
+                print("{i}) {title} ({artist})".format(
+                    i=i,
+                    title=song.get_attr('title') or '(untitled)',
+                    artist=song.get_attr('artist') or '(unknown artist)'))
+
+            print("Enter number or search term:")
+        term = input()
+
+        try:
+            int_term = int(term)
+        except ValueError:
+            int_term = None
+
+        new_songs = []
+        for i, song in enumerate(songs):
+            search = (song[1].get_attr('title') or '') + \
+                (song[1].get_attr('artist') or '')
+            search = search.lower()
+
+            if all(word.lower() in search for word in term.split()) or \
+                    (int_term and i == int_term):
+                new_songs.append(song)
+
+        if len(new_songs) == 0:
+            print("Bad search, try again!")
+        else:
+            songs = new_songs
+
+    return songs[0][1]
+
+
+def debug_select():
+    """Select a song"""
+    library = get_library_or_die()
+    song = select_song(library)
+
+    print("You selected: {}".format(song))
+
 # reading from command prompt helpers
 def cond_any(s):
     """Accepts any input."""
@@ -366,50 +415,53 @@ if __name__ == "__main__":
     parser_export = subparsers.add_parser("export", help="export library into another format")
     parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
 
-    parser_import = subparsers.add_parser("import",
+    parser_import = subparsers.add_parser('import',
             help="imports a library into musicman, without modifying the existing library")
-    parser_import.add_argument("source", type=str, choices=("banshee",), help="type of library to import")
+    parser_import.add_argument('source', type=str, choices=('banshee',), help="type of library to import")
 
-    parser_vi = subparsers.add_parser("vi", help="modify musicman config file")
+    parser_vi = subparsers.add_parser('vi', help="modify musicman config file")
 
     # debugging
-    parser_debug = subparsers.add_parser("debug", help="debugging commands for testing musicman")
-    debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest="subcommand")
-    parser_dump = debug_subparsers.add_parser("dump", help="dumps library JSON")
-    parser_save = debug_subparsers.add_parser("save", help="loads and saves library without making changes")
-    parser_shell = debug_subparsers.add_parser("shell", help="loads library and starts a python interpreter")
+    parser_debug = subparsers.add_parser('debug', help="debugging commands for testing musicman")
+    debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest='subcommand')
+    parser_dump = debug_subparsers.add_parser('dump', help="dumps library JSON")
+    parser_save = debug_subparsers.add_parser('save', help="loads and saves library without making changes")
+    parser_shell = debug_subparsers.add_parser('shell', help="loads library and starts a python interpreter")
+    parser_select = debug_subparsers.add_parser('select', help="select a song")
 
     args = parser.parse_args()
 
-    if args.command == "init":
+    if args.command == 'init':
         init()
-    elif args.command == "status":
+    elif args.command == 'status':
         status()
-    elif args.command == "add":
+    elif args.command == 'add':
         add(args.path, dateutil.parser.parse(args.date),
             check_extension=not args.skip_check_extension,
             no_bad_extensions=args.no_bad_extensions,
             recurse=args.recurse)
-    elif args.command == "rm":
+    elif args.command == 'rm':
         remove(args.files)
-    elif args.command == "export":
+    elif args.command == 'export':
         export()
-    elif args.command == "update-metadata":
+    elif args.command == 'update-metadata':
         update_metadata()
-    elif args.command == "playlist":
-        if args.subcommand == "new":
+    elif args.command == 'playlist':
+        if args.subcommand == 'new':
             playlist_new()
-        elif args.subcommand == "list":
+        elif args.subcommand == 'list':
             playlist_list()
-    elif args.command == "vi":
+    elif args.command == 'vi':
         vi()
-    elif args.command == "import":
-        if args.source == "banshee":
+    elif args.command == 'import':
+        if args.source == 'banshee':
             import_banshee()
-    elif args.command == "debug":
-        if args.subcommand == "dump":
+    elif args.command == 'debug':
+        if args.subcommand == 'dump':
             debug_dump()
-        elif args.subcommand == "save":
+        elif args.subcommand == 'save':
             debug_save()
-        elif args.subcommand == "shell":
+        elif args.subcommand == 'shell':
             debug_shell()
+        elif args.subcommand == 'select':
+            debug_select()
