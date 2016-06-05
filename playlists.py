@@ -48,7 +48,7 @@ class Playlist(metaclass=ABCMeta):
                 return "".join([c for c in title if re.match(valid, c)])
 
             yield "#EXTINF,{},{}".format(int(seconds), sanitize(title))
-            yield library.get_song_path(song.filename)
+            yield song.filename
 
 class SimplePlaylist(Playlist):
     """SimplePlaylist is an implementation of a static playlist. Songs can be

@@ -199,6 +199,25 @@ def playlist_new():
 
     library.save()
 
+def playlist_add(playlist_name):
+    """Add songs to a playlist."""
+    library = get_library_or_die()
+
+    playlist = library.playlists[playlist_name]
+    while True:
+        print()
+        print("Choose a song to replace (hit ^C when done):")
+        try:
+            song = select_song(library)
+        except KeyboardInterrupt:
+            break
+        if song not in playlist.songs:
+            playlist.songs.append(song)
+
+    if input('Save changes? [Yn]').lower().strip() in {'', 'y', 'yes'}:
+        library.save()
+
+
 def playlist_list():
     """Lists playlists."""
     library = get_library_or_die()
@@ -327,7 +346,7 @@ def select_song(library):
                 print("{i:>2} | {artist: <{artist_width}} | {title:<{title_width}}".format(
                     artist_width=artist_width,
                     title_width=title_width,
-                    i=i,
+                    i=i+1,
                     title=(song.get_attr('title') or '(untitled)')[:title_width],
                     artist=(song.get_attr('artist') or '(unknown artist)')[:artist_width]))
 
@@ -349,7 +368,7 @@ def select_song(library):
             search = search.lower()
 
             if all(word.lower() in search for word in term.split()) or \
-                    (int_term is not None and i == int_term):
+                    (int_term is not None and i + 1 == int_term):
                 new_songs.append(song)
 
         if len(new_songs) == 0:
@@ -431,7 +450,9 @@ if __name__ == "__main__":
 
     parser_playlist = subparsers.add_parser("playlist", help="manage playlists")
     playlist_subparsers = parser_playlist.add_subparsers(title="available subcommands", dest="subcommand")
-    parser_playlist_add = playlist_subparsers.add_parser("new", help="create a new playlist")
+    parser_playlist_new = playlist_subparsers.add_parser("new", help="create a new playlist")
+    parser_playlist_add = playlist_subparsers.add_parser("add", help="add songs to a playlist")
+    parser_playlist_add.add_argument('playlist', help='name of playlist')
     parser_playlist_list = playlist_subparsers.add_parser("list", help="lists playlists")
 
     parser_export = subparsers.add_parser("export", help="export library into another format")
@@ -475,6 +496,8 @@ if __name__ == "__main__":
             playlist_new()
         elif args.subcommand == 'list':
             playlist_list()
+        elif args.subcommand == 'add':
+            playlist_add(args.playlist)
     elif args.command == 'vi':
         vi()
     elif args.command == 'import':
