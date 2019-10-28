@@ -466,7 +466,7 @@ if __name__ == "__main__":
 
     # debugging
     parser_debug = subparsers.add_parser('debug', help="debugging commands for testing musicman")
-    debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest='subcommand')
+    debug_subparsers = parser_debug.add_subparsers(title="available subcommands", dest='subcommand', required=True)
     parser_dump = debug_subparsers.add_parser('dump', help="dumps library JSON")
     parser_save = debug_subparsers.add_parser('save', help="loads and saves library without making changes")
     parser_shell = debug_subparsers.add_parser('shell', help="loads library and starts a python interpreter")
