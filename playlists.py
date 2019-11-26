@@ -144,7 +144,7 @@ class AutoPlaylist(Playlist):
             reverse = field.startswith("!")
             if reverse:
                 field = field[1:]
-            songs.sort(key=lambda song: song.get_attr(field) or "", reverse=reverse)
+            songs.sort(key=lambda song: song.get_attr_for_sorting(field) or "", reverse=reverse)
 
         return songs
 

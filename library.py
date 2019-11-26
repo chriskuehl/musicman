@@ -193,6 +193,23 @@ class Library:
     def get_song_path(self, filename):
         return os.path.join(self.get_music_path(), filename)
 
+
+def sort_tracknumber(tracknumber):
+    if tracknumber:
+        # tracknumber can be any string, but is typically either a
+        # (stringified) integer or something like "3/42".
+        n, _, _ = tracknumber.partition('/')
+        try:
+            return int(n)
+        except ValueError:
+            pass
+
+
+ATTR_SPECIAL_SORT = {
+    'tracknumber': sort_tracknumber,
+}
+
+
 class Song:
     ALLOWED_ATTRS = ("filename", "date_added")
 
@@ -219,6 +236,13 @@ class Song:
             return self.metadata[attr]
 
         return None
+
+    def get_attr_for_sorting(self, attr):
+        ret = self.get_attr(attr)
+        if attr in ATTR_SPECIAL_SORT:
+            return ATTR_SPECIAL_SORT[attr](ret)
+        else:
+            return ret
 
 def gen_filename(path):
     """Generates a file name a given song. Tries to be fairly conservative in
