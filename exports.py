@@ -70,24 +70,5 @@ class FlatDirExport(Export):
         self.music_dir = config["music_dir"]
         self.playlist_dir = config["playlist_dir"]
 
-class BansheeExport(Export):
-    TYPE = "banshee"
-    music_dir = None
-    config_dir = None
-
-    def update(self, library):
-        print("updating banshee...")
-
-    def serialize(self):
-        config = super().serialize()
-        config["music_dir"] = self.music_dir
-        config["config_dir"] = self.config_dir
-        return config
-
-    def unserialize(self, config):
-        super().unserialize(config)
-        self.music_dir = config["music_dir"]
-        self.config_dir = config["config_dir"]
-
-EXPORT_CLASSES = (FlatDirExport, BansheeExport)
+EXPORT_CLASSES = (FlatDirExport,)
 EXPORT_MAPPING = {export.TYPE: export for export in EXPORT_CLASSES}

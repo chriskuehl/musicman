@@ -12,7 +12,6 @@ import subprocess
 import sys
 import tempfile
 
-import musicman.imports as mimports
 import musicman.io as mio
 import musicman.library as mlib
 import musicman.playlists as mplaylists
@@ -258,56 +257,6 @@ def vi():
 def get_default_editor():
     return os.environ.get("VISUAL") or os.environ.get("EDITOR") or "vi"
 
-def import_banshee():
-    """Imports a banshee library."""
-    library = get_library_or_die()
-
-    # find banshee directory
-    print("Where is the banshee library stored?")
-    print("")
-    print("Your banshee library directory contains a file called `banshee.db`, which we need to read.")
-    print("By default, this directory lives at `~/.config/banshee-1`. Please enter the path to the directory.")
-
-    banshee_db = lambda dir: os.path.join(os.path.expanduser(dir), "banshee.db")
-
-    def cond_banshee_dir(dir):
-        db = banshee_db(dir)
-
-        if not os.path.isfile(db):
-            return "Couldn't find `{}`, are you sure this is a banshee directory?".format(db)
-
-        return None
-
-    dir = read("Banshee library location:", cond_banshee_dir)
-    db = banshee_db(dir)
-    songs = mimports.banshee_get_songs(db)
-    imported = 0
-    total = 0
-
-    for song in songs:
-        total += 1
-
-        if not os.path.isfile(song["path"]):
-            print("Can't import `{}` (file doesn't exist)".format(song["path"]))
-            continue
-
-        # TODO: make this more generic to share with add
-        # TODO: option to skip this check and reject all files not matching
-        ext = os.path.splitext(song["path"])[1][1:]
-
-        if ext.lower() not in library.extensions:
-            print("Unexpected music extension `{}` found for file `{}`.".format(ext, song["path"]))
-
-            if input("Add song anyway? [yN] ") != "y":
-                print("Skipping song.")
-                continue
-
-        library.add_song(song["path"], date_added=song["date_added"])
-        imported += 1
-
-    library.save()
-    print("Imported {} new songs (out of {} in Banshee library)".format(imported, total))
-
 def debug_dump():
     """Prints the serialized version of the library. Only useful for
     debugging."""
@@ -458,10 +407,6 @@ if __name__ == "__main__":
     parser_export = subparsers.add_parser("export", help="export library into another format")
     parser_update_metadata = subparsers.add_parser("update-metadata", help="updates song metadata")
 
-    parser_import = subparsers.add_parser('import',
-            help="imports a library into musicman, without modifying the existing library")
-    parser_import.add_argument('source', type=str, choices=('banshee',), help="type of library to import")
-
     parser_vi = subparsers.add_parser('vi', help="modify musicman config file")
 
     # debugging
@@ -500,9 +445,6 @@ if __name__ == "__main__":
             playlist_add(args.playlist)
     elif args.command == 'vi':
         vi()
-    elif args.command == 'import':
-        if args.source == 'banshee':
-            import_banshee()
     elif args.command == 'debug':
         if args.subcommand == 'dump':
             debug_dump()
