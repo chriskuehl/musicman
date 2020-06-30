@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import datetime
+import functools
 import re
 import time
 
@@ -81,6 +82,8 @@ CONDITION_NOT_IN = 6
 CONDITION_CONTAINS_ALL = 7
 CONDITION_CONTAINS_ANY = 8
 CONDITION_CONTAINS_NONE = 9
+CONDITION_IS_IN_PLAYLIST = 10
+CONDITION_IS_NOT_IN_PLAYLIST = 11
 
 # maps english phrase to internal constant
 CONDITION_MAPPING = {
@@ -92,36 +95,46 @@ CONDITION_MAPPING = {
     "not in": CONDITION_NOT_IN,
     "contains all": CONDITION_CONTAINS_ALL,
     "contains any": CONDITION_CONTAINS_ANY,
-    "contains none": CONDITION_CONTAINS_NONE
+    "contains none": CONDITION_CONTAINS_NONE,
+    "is in playlist": CONDITION_IS_IN_PLAYLIST,
+    "is not in playlist": CONDITION_IS_NOT_IN_PLAYLIST,
 }
 
 # maps internal constant to english phrase
 CONDITION_MAPPING_REVERSE = {v: k for k, v in CONDITION_MAPPING.items()}
 
+
+def _is_in_playlist(cur, rule, library):
+    playlist = library.playlists[rule]
+    return cur in playlist.get_songs(library)
+
+
 # conditions on single values
 CONDITIONS_SINGLE = {
     CONDITION_IS:
-        lambda cur, rule: cur == rule,
+        lambda cur, rule, library: cur == rule,
     CONDITION_IS_NOT:
-        lambda cur, rule: cur != rule,
+        lambda cur, rule, library: cur != rule,
     CONDITION_CONTAINS:
-        lambda cur, rule: cur and rule in cur,
+        lambda cur, rule, library: cur and rule in cur,
     CONDITION_DOES_NOT_CONTAIN:
-        lambda cur, rule: not cur or rule not in cur,
+        lambda cur, rule, library: not cur or rule not in cur,
+    CONDITION_IS_IN_PLAYLIST: _is_in_playlist,
+    CONDITION_IS_NOT_IN_PLAYLIST: lambda *args: not _is_in_playlist(*args),
 }
 
 # conditions on multiple values
 CONDITIONS_MULTIPLE = {
     CONDITION_IN:
-        lambda cur, rule: cur in rule,
+        lambda cur, rule, library: cur in rule,
     CONDITION_NOT_IN:
-        lambda cur, rule: cur not in rule,
+        lambda cur, rule, library: cur not in rule,
     CONDITION_CONTAINS_ALL:
-        lambda cur, rule: all(r in cur for r in rule if cur),
+        lambda cur, rule, library: all(r in cur for r in rule if cur),
     CONDITION_CONTAINS_ANY:
-        lambda cur, rule: any(r in cur for r in rule if cur),
+        lambda cur, rule, library: any(r in cur for r in rule if cur),
     CONDITION_CONTAINS_NONE:
-        lambda cur, rule: not any(r in cur for r in rule if cur)
+        lambda cur, rule, library: not any(r in cur for r in rule if cur)
 }
 
 class AutoPlaylist(Playlist):
@@ -136,8 +149,9 @@ class AutoPlaylist(Playlist):
     def get_conditions(self):
         return {"type": "and", "conditions": self.conditions}
 
+    @functools.lru_cache()
     def get_songs(self, library):
-        songs = [song for _, song in library.songs.items() if self.matches(song)]
+        songs = [song for _, song in library.songs.items() if self.matches(song, library)]
 
         # sort on least-significant fields first since sort is stable
         for field in reversed(self.sort):
@@ -148,13 +162,13 @@ class AutoPlaylist(Playlist):
 
         return songs
 
-    def matches(self, song):
+    def matches(self, song, library):
         def matches_condition(condition):
             if condition["type"] in ("and", "or"):
                 match = any if condition["type"] == "or" else all
                 return match(matches_condition(c) for c in condition["conditions"])
             else:
-                clean = lambda s: s.lower().strip() if s else None
+                clean = lambda s: s.lower().strip() if isinstance(s, str) else s
 
                 val = song.get_attr(condition["attr"])
                 match = condition["value"]
@@ -164,7 +178,7 @@ class AutoPlaylist(Playlist):
                 else:
                     match = clean(match)
 
-                return condition["func"](clean(val), match)
+                return condition["func"](clean(val), match, library)
 
         return matches_condition(self.get_conditions())
 

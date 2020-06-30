@@ -229,6 +229,9 @@ class Song:
         library-specific attribute (like date added), or song-specific metadata
         (like title or song length)."""
 
+        if attr == 'song':
+            return self
+
         if attr in Song.ALLOWED_ATTRS:
             return getattr(self, attr)
 
