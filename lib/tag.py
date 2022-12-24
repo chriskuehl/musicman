@@ -1,9 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """Helper program whose only purpose is to print tags from a media file. Relies
-on the mutagen library, which is currently only available for Python 2.
+on the mutagen library, which used to be only available for Python 2.
 
-The rest of the musicman project invokes this as a binary (rather than, for
-example, importing it) so that python3 compatibility can be maintained."""
+Previously this was a separate binary so that it could be invoked with Python
+2, but that is no longer necessary, and eventually we should just call mutagen
+directly from musicman.
+"""
 
 import json
 import sys
@@ -23,9 +25,9 @@ if __name__ == "__main__":
     if not f_easy or not f_hard:
         sys.exit("unable to read file")
 
-    tags = dict((k, v[0]) for (k, v) in f_easy.iteritems())
+    tags = dict((k, v[0]) for (k, v) in f_easy.items())
 
     if f_hard.info.length > 0:
         tags["length"] = f_hard.info.length
 
-    print json.dumps(tags, indent=4)
+    print(json.dumps(tags, indent=4))
